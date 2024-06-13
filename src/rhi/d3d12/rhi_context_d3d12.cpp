@@ -1,6 +1,7 @@
 #pragma once
 #include "rhi/d3d12/rhi_context_d3d12.h"
 #include "core/logger.h"
+#include "rhi_context_d3d12.h"
 #include <vcruntime.h>
 #include <windef.h>
 
@@ -40,6 +41,7 @@ size_t RHIContextD3D12::initialize(HWND handle) {
 		Logger::get_singleton().singletonLogger->error("d3d device create error !!!");
 		return -1;
 	}
+	initialize_allocator();
 	return 0;
 }
 
@@ -100,19 +102,19 @@ size_t RHIContextD3D12::init_devices() {
 		return -1;
 	}
 	std::vector<IDXGIAdapter1 *> adapters;
-	IDXGIAdapter1 *adapter = nullptr;
-    adapter = create_adapter(adapters.size());
-    res = adapter->GetDesc(&adapter_desc);
+	// IDXGIAdapter1* main_adapter = nullptr;
+    main_adapter = create_adapter(adapters.size());
+    res = main_adapter->GetDesc(&adapter_desc);
     if(!SUCCEEDED(res)) {
         Logger::get_singleton().singletonLogger->error("Adapters desc get error !!!");
 		return -1;
     }
     // Logger::get_singleton().singletonLogger->info("{}-driver-{}", adapter_desc.AdapterLuid, adapter_desc.Revision);
     if (device_factory != nullptr) {
-        res = device_factory->CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf()));
+        res = device_factory->CreateDevice(main_adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf()));
     } else {
         PFN_D3D12_CREATE_DEVICE d3d_D3D12CreateDevice = (PFN_D3D12_CREATE_DEVICE)(void *)GetProcAddress(lib_d3d12, "D3D12CreateDevice");
-        res = d3d_D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf()));
+        res = d3d_D3D12CreateDevice(main_adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf()));
     }
 
     res = device->QueryInterface(debug_device.GetAddressOf());
@@ -170,5 +172,21 @@ IDXGIAdapter1 *RHIContextD3D12::create_adapter(uint32_t p_adapter_index) const {
 	}
 
 	return adapter;
+}
+
+size_t RHIContextD3D12::initialize_allocator()
+{
+	D3D12MA::ALLOCATOR_DESC allocator_desc = {};
+	allocator_desc.pDevice = device.Get();
+	allocator_desc.pAdapter = main_adapter.Get();
+	allocator_desc.Flags = D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
+
+	HRESULT res = D3D12MA::CreateAllocator(&allocator_desc, &allocator);
+	if(!SUCCEEDED(res))
+	{
+		Logger::get_singleton().singletonLogger->error("D3D12MA::CreateAllocator failed with error");
+		return -1;
+	} 
+	return 0;
 }
 } //namespace Yoda
