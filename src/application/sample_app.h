@@ -1,5 +1,6 @@
 #pragma once
 #include "core/window.h"
+#include "rhi/rhi_context.h"
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -61,6 +62,7 @@ private:
 	// void handleGamepadState(const GamepadState& gamepadState) override;
 	// void handleDroppedFile(const std::filesystem::path& path) override;
     std::shared_ptr<Window> m_window;              ///< Main window (nullptr if headless).   
+    std::shared_ptr<RHIContext> m_render_context;
     // TODO:------------------
     // std::shared_ptr<Device> m_device;              ///< GPU device.
     // std::shared_ptr<Swapchain> m_swapchain;        ///< Main swapchain (nullptr if headless).

@@ -1,5 +1,7 @@
 #include "application/sample_app.h"
+#include "rhi/d3d12/rhi_context_d3d12.h"
 #include <fstream>
+#include <memory>
 
 namespace Yoda
 {
@@ -14,6 +16,8 @@ namespace Yoda
             // Create the window
             m_window = Window::create(windowDesc, this);
             // m_window->setWindowIcon(getRuntimeDirectory() / "data/framework/nvidia.ico");
+            m_render_context = std::make_shared<RHIContextD3D12>();
+            m_render_context->initialize(m_window->getApiHandle());
         }
     }
 

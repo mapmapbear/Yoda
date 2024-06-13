@@ -8,3 +8,9 @@
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "external/directx_headers"]
+	path = external/directx_headers
+	url = https://github.com/microsoft/DirectX-Headers.git
