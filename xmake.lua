@@ -1,4 +1,4 @@
-add_rules("mode.debug", "mode.release")
+add_rules("mode.debug")
 if is_mode("debug") then
     add_defines("DEBUG")
 end 
