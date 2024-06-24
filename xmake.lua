@@ -51,7 +51,7 @@ add_requires("spdlog")
 add_requires("glfw")
 add_requires("directx_headers")
 add_requires("d3d12ma")
-
+add_requires("dxcompiler")
 
 target("ImGui")
     add_includedirs("external/imgui")
@@ -85,6 +85,7 @@ target("sandbox")
     add_packages("glfw")
     add_packages("spdlog")
     add_packages("d3d12ma")
+    add_packages("dxcompiler")
     add_packages("directx_headers")
     add_deps("ImGui")
     if is_plat("windows") then

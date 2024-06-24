@@ -108,7 +108,14 @@ struct GraphicsPipelineSpecs
     std::unordered_map<ShaderType, struct ShaderBytecode> Bytecodes;
 };
 
-
+enum class BufferType
+{
+    Vertex,
+    Index,
+    Constant,
+    Storage,
+    Copy
+};
 
 class RHIContextCommons {
 public:

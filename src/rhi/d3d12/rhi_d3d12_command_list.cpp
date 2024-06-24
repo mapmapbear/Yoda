@@ -1,6 +1,6 @@
 #include "rhi/d3d12/rhi_d3d12_command_list.h"
 #include "core/logger.h"
-#include "d3dcommon.h"
+#include "render/buffer.h"
 #include "render/texture.h"
 #include "rhi/d3d12/rhi_d3d12_allocator.h"
 #include "rhi/d3d12/rhi_d3d12_descriptor_heap.h"
@@ -11,7 +11,7 @@
 
 namespace Yoda {
 D3D12CommandList::D3D12CommandList(std::shared_ptr<D3D12Device> device,
-                                   Heaps &heaps, CommandQueueType type) {
+                                   Heaps *heaps, CommandQueueType type) {
   HRESULT result = device->get_d3d_device()->CreateCommandAllocator(
       (D3D12_COMMAND_LIST_TYPE)type, IID_PPV_ARGS(&m_command_allocator));
   if (FAILED(result)) {
@@ -26,6 +26,15 @@ D3D12CommandList::~D3D12CommandList() {
 void D3D12CommandList::begin() {
   m_command_allocator->Reset();
   m_command_list->Reset(m_command_allocator, nullptr);
+}
+
+void D3D12CommandList::end() { m_command_list->Close(); }
+
+void D3D12CommandList::clear_rendertarget(std::shared_ptr<Texture> renderTarget,
+                                          float r, float g, float b, float a) {
+  float clearValues[4] = {r, g, b, a};
+  m_command_list->ClearRenderTargetView(renderTarget->m_rtv->CPU, clearValues,
+                                        0, nullptr);
 }
 
 void D3D12CommandList::resource_barrier(std::shared_ptr<Texture> texture,
@@ -91,4 +100,26 @@ void D3D12CommandList::bind_graphics_pipeline(
   m_command_list->SetPipelineState(pipeline->get_pipeline());
   m_command_list->SetGraphicsRootSignature(pipeline->get_root_signature());
 }
+
+void D3D12CommandList::copy_buffer_to_buffer(std::shared_ptr<Buffer> dst,
+                                             std::shared_ptr<Buffer> src) {
+  m_command_list->CopyResource(dst->m_resource->Resource,
+                               src->m_resource->Resource);
+}
+
+void D3D12CommandList::copy_texture_to_texture(std::shared_ptr<Texture> dst,
+                                               std::shared_ptr<Texture> src) {
+  D3D12_TEXTURE_COPY_LOCATION BlitSource = {};
+  BlitSource.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+  BlitSource.pResource = src->get_resource()->Resource;
+  BlitSource.SubresourceIndex = 0;
+
+  D3D12_TEXTURE_COPY_LOCATION BlitDest = {};
+  BlitDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+  BlitDest.pResource = dst->get_resource()->Resource;
+  BlitDest.SubresourceIndex = 0;
+
+  m_command_list->CopyTextureRegion(&BlitDest, 0, 0, 0, &BlitSource, nullptr);
+}
+
 } // namespace Yoda

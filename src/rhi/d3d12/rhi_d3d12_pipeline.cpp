@@ -238,4 +238,10 @@ D3D12Pipeline::D3D12Pipeline(std::shared_ptr<D3D12Device> device,
   pPixelReflection->Release();
   pVertexReflection->Release();
 }
+
+D3D12Pipeline::~D3D12Pipeline()
+{
+    m_rootSignature->Release();
+    m_pipeline->Release();
+}
 } // namespace Yoda

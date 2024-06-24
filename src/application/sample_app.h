@@ -1,5 +1,7 @@
 #pragma once
 #include "core/window.h"
+#include "render/buffer.h"
+#include "rhi/d3d12/rhi_d3d12_pipeline.h"
 #include "rhi/rhi_context.h"
 #include "rhi/d3d12/rhi_context_d3d12.h"
 #include <filesystem>
@@ -84,5 +86,8 @@ private:
 
     SampleApp(const SampleApp&) = delete;
     SampleApp& operator=(const SampleApp&) = delete;
+
+    std::shared_ptr<D3D12Pipeline> m_triPipeline;
+    std::shared_ptr<Buffer> m_vertex_buffer;
 };
 }; // namespace Yoda
