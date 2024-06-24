@@ -4,11 +4,7 @@
 
 namespace Yoda {
 class D3D12Device;
-enum class CommandQueueType {
-  Graphics = D3D12_COMMAND_LIST_TYPE_DIRECT,
-  Compute = D3D12_COMMAND_LIST_TYPE_COMPUTE,
-  Copy = D3D12_COMMAND_LIST_TYPE_COPY
-};
+enum class CommandQueueType;
 class D3D12CommandQueue {
 public:
   D3D12CommandQueue(std::shared_ptr<D3D12Device> device, CommandQueueType type);

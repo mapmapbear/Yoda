@@ -7,6 +7,6 @@ namespace Yoda {
     {
     public:
         virtual size_t initialize(HWND handle) = 0;
-        // virtual size_t command_queue_create(CommandQueueType type) = 0;
+        virtual void begin_frame() = 0;
     };
 }

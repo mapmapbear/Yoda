@@ -64,6 +64,7 @@ D3D12DescroptorHeap::Descriptor D3D12DescroptorHeap::Allocate() {
     LOG_ERROR("Failed to find suitable descriptor!");
     return Descriptor(this, -1);
   } else {
+    
     return Descriptor(this, index);
   }
 }

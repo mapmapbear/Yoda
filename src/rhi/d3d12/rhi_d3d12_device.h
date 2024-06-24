@@ -7,6 +7,7 @@
 using namespace Microsoft::WRL;
 
 namespace Yoda {
+  
 class D3D12Device {
 public:
   D3D12Device();
@@ -16,7 +17,7 @@ public:
   size_t init_debug_layers();
   size_t init_devices();
   IDXGIAdapter1 *create_adapter(uint32_t p_adapter_index) const;
-  ComPtr<ID3D12Device> get_d3d_device() { return device; }
+  ID3D12Device* get_d3d_device() { return device.Get(); }
   ComPtr<IDXGIAdapter1> get_adapter() { return main_adapter; }
   ComPtr<IDXGIFactory2> get_factory() { return dxgi_factory; }
 

@@ -30,6 +30,7 @@ public:
   ~D3D12DescroptorHeap();
   Descriptor Allocate();
   void Release(Descriptor descriptor);
+  ID3D12DescriptorHeap *GetHeap() { return heap; }
 
 protected:
   ID3D12DescriptorHeap *heap;

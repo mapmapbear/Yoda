@@ -1,5 +1,6 @@
 #include "rhi/d3d12/rhi_d3d12_command_queue.h"
 #include "rhi/d3d12/rhi_d3d12_device.h"
+#include "rhi/rhi_context_commons.h"
 #include "core/logger.h"
 #include <memory>
 #include <winerror.h>
