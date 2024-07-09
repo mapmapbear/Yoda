@@ -14,3 +14,12 @@
 [submodule "external/directx_headers"]
 	path = external/directx_headers
 	url = https://github.com/microsoft/DirectX-Headers.git
+[submodule "external/nvrhi"]
+	path = external/nvrhi
+	url = https://github.com/NVIDIAGameWorks/nvrhi.git
+[submodule "external/glm"]
+	path = external/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp.git

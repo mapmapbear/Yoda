@@ -3,7 +3,7 @@
 #include <Windows.h>
 
 namespace Yoda {
-    class RHIContext : public RHIContextCommons
+    class RHIContext
     {
     public:
         virtual size_t initialize(HWND handle) = 0;
