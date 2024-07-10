@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+
 namespace Yoda {
 
 /**
@@ -33,10 +34,8 @@ struct SampleAppConfig {
   bool generateShaderDebugInfo = false;
   bool shaderPreciseFloat = false;
 };
-
-/**
- * Sample application base class.
- */
+class SimplePass;
+class SkyPass;
 class SampleApp : public Window::ICallbacks {
 public:
   SampleApp(const SampleAppConfig &config);
@@ -46,12 +45,17 @@ public:
   Window *getWindow() { return m_window.get(); }
   void resizeFrameBuffer(uint32_t width, uint32_t height);
   void renderFrame();
+  void UpdateRenderData();
   void toggleUI(bool showUI) { mShowUI = showUI; }
   bool isUiEnabled() { return mShowUI; }
   void pauseRenderer(bool pause) { mRendererPaused = pause; }
   bool isRendererPaused() { return mRendererPaused; }
   void toggleVsync(bool on) { mVsyncOn = on; }
   bool isVsyncEnabled() { return mVsyncOn; }
+
+public:
+  std::shared_ptr<SimplePass> passA;
+  std::shared_ptr<SkyPass> passB;
 
 protected:
   // base pass

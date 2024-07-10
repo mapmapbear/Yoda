@@ -52,9 +52,11 @@ void FlyCamera::UpdateCamera(SwapChainInfo &info) {
 
   // Update projection aspect ratio
   float const aspect_ratio = (float)info.width / info.height;
-
+#ifdef REVERT_Z
   proj = glm::perspective(0.6f, aspect_ratio, 1e-1f, 1e4f);
-
+#else
+  proj = glm::perspective(0.6f, aspect_ratio, 1e4f, 1e-1f);
+#endif
   // Update projection jitter for anti-aliasing
   static uint32_t jitter_index;
 

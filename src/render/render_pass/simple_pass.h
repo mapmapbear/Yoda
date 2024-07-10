@@ -1,0 +1,48 @@
+#pragma once
+#include "render/world.h"
+#include <memory>
+#include <nvrhi/nvrhi.h>
+
+
+namespace Yoda {
+class RHIContextD3D12;
+class FlyCamera;
+
+class SimplePass {
+public:
+  SimplePass(std::shared_ptr<RHIContextD3D12> context);
+  ~SimplePass();
+  void Render(nvrhi::TextureHandle col_tex, nvrhi::TextureHandle depth_tex);
+  void Submit();
+  void UpdateRenderdata(FlyCamera camera);
+  void Resize(nvrhi::TextureHandle col_tex, nvrhi::TextureHandle depth_tex);
+
+protected:
+  nvrhi::ShaderHandle vs_shader;
+  nvrhi::ShaderHandle ps_shader;
+  nvrhi::GraphicsPipelineHandle pipeline;
+  nvrhi::InputLayoutHandle input_layout;
+  nvrhi::BufferHandle vertex_buffer;
+  nvrhi::BufferHandle uv_buffer;
+  nvrhi::BufferHandle normal_buffer;
+  nvrhi::BufferHandle tangent_buffer;
+  nvrhi::BufferHandle binormal_buffer;
+  nvrhi::BufferHandle index_buffer;
+  nvrhi::BufferHandle constant_buffer;
+  nvrhi::BindingLayoutHandle binding_layout;
+  nvrhi::BindingSetHandle binding_set;
+  nvrhi::FramebufferHandle framebuffer;
+
+protected:
+  nvrhi::TextureHandle albedo_texute;
+  nvrhi::TextureDesc aldebo_desc;
+  unsigned char *albedo_raw_data = nullptr;
+
+protected:
+  World scene_world;
+
+  std::shared_ptr<RHIContextD3D12> render_contex;
+  bool is_pre_frame = true;
+  bool is_start_frame = true;
+};
+} // namespace Yoda

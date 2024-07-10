@@ -226,7 +226,8 @@ void Window::msgLoop() {
   // Samples often rely on a size change event as part of initialization
   // This would have happened from a WM_SIZE message when calling ShowWindow on
   // Win32
-  mpCallbacks->handleWindowSizeChange();
+  
+  //mpCallbacks->handleWindowSizeChange();
 
   while (!shouldClose()) {
     pollForEvents();
