@@ -33,11 +33,13 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     m_render_context = std::make_shared<RHIContextD3D12>();
     m_render_context->initialize(m_window->getApiHandle());
 
-    std::string test_scene_path = "module/sphere_units.fbx";
-    bool state = Mesh::load_scene(test_scene_path, scene_world);
+    // std::string test_scene_path = "module/sphere_units.fbx";
+    //  std::string test_scene_path = "module/crag.fbx";
+    //   bool state = Mesh::load_scene(test_scene_path, scene_world);
+    //   state = World::load_scene1(test_scene_path, scene_world);
 
     fcamera =
-        FlyCamera{glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+        FlyCamera{glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                   m_render_context->get_swapchain_info()};
 
     nvrhi::TextureDesc texture_desc;
@@ -208,11 +210,11 @@ void SampleApp::handleKeyboardEvent(int key, int action) {
       break;
     case GLFW_KEY_A:
       camera_move_dirty = true;
-      acceleration.x -= force;
+      acceleration.x += force;
       break;
     case GLFW_KEY_D:
       camera_move_dirty = true;
-      acceleration.x += force;
+      acceleration.x -= force;
       break;
     case GLFW_KEY_Q:
       camera_move_dirty = true;
@@ -264,8 +266,8 @@ void SampleApp::handleMouseEvent(int action, double x, double y) {
     newXY = newXY - mouse_pos;
 
     glm::vec2 acceleration = camera_rotation * -45.0f;
-    acceleration.x -= force2 * newXY.x;
-    acceleration.y += force2 * newXY.y;
+    acceleration.x += force2 * newXY.x;
+    acceleration.y -= force2 * newXY.y;
     camera_rotation += acceleration * 0.5f * frame_time_min;
     camera_rotation = glm::clamp(camera_rotation, -4e-2f, 4e-2f);
     // Clamp tiny values to zero to improve convergence to resting state
@@ -279,7 +281,7 @@ void SampleApp::handleMouseEvent(int action, double x, double y) {
         camera_rotation.y = 0.0f;
       }
     }
-    glm::quat rotationX = glm::angleAxis(-camera_rotation.x, up);
+    glm::quat rotationX = glm::angleAxis(camera_rotation.x, up);
     glm::quat rotationY = glm::angleAxis(camera_rotation.y, right);
 
     const glm::vec3 newForward = normalize(forward * rotationX * rotationY);

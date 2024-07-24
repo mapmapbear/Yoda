@@ -3,7 +3,6 @@
 #include <memory>
 #include <nvrhi/nvrhi.h>
 
-
 namespace Yoda {
 class RHIContextD3D12;
 class FlyCamera;
@@ -13,6 +12,10 @@ public:
   SimplePass(std::shared_ptr<RHIContextD3D12> context);
   ~SimplePass();
   void Render(nvrhi::TextureHandle col_tex, nvrhi::TextureHandle depth_tex);
+  void PreZ_Render(nvrhi::TextureHandle col_tex,
+                   nvrhi::TextureHandle depth_tex);
+  void Base_Render(nvrhi::TextureHandle col_tex,
+                   nvrhi::TextureHandle depth_tex);
   void Submit();
   void UpdateRenderdata(FlyCamera camera);
   void Resize(nvrhi::TextureHandle col_tex, nvrhi::TextureHandle depth_tex);
@@ -21,6 +24,7 @@ protected:
   nvrhi::ShaderHandle vs_shader;
   nvrhi::ShaderHandle ps_shader;
   nvrhi::GraphicsPipelineHandle pipeline;
+  nvrhi::GraphicsPipelineHandle preZ_pipeline;
   nvrhi::InputLayoutHandle input_layout;
   nvrhi::BufferHandle vertex_buffer;
   nvrhi::BufferHandle uv_buffer;
@@ -32,6 +36,7 @@ protected:
   nvrhi::BindingLayoutHandle binding_layout;
   nvrhi::BindingSetHandle binding_set;
   nvrhi::FramebufferHandle framebuffer;
+  nvrhi::FramebufferHandle preZ_framebuffer;
 
 protected:
   nvrhi::TextureHandle albedo_texute;

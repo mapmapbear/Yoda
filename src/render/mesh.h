@@ -19,6 +19,8 @@ public:
   std::vector<glm::vec4> colors_stream;
   std::vector<uint32_t> indices;
 
+  std::string mesh_name;
+
 public:
   static bool load_scene(std::string &path, World &world);
 

@@ -24,5 +24,9 @@ public:
   glm::mat4 prev_view;
   glm::mat4 prev_proj;
   glm::mat4 prev_view_proj;
+
+
+  // custom pass 
+  glm::mat4 sky_transform;
 };
 } // namespace Yoda

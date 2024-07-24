@@ -522,7 +522,7 @@ RHIContextD3D12::shader_create_from_bytecode(nvrhi::ShaderType type,
   nvrhi::ShaderDesc desc;
   desc.shaderType = type;
   return nvrhi_device->createShader(desc, (void *)byte_code.data(),
-                                    byte_code.size() * sizeof(uint8_t));
+                                    byte_code.size());
 }
 
 nvrhi::GraphicsPipelineHandle

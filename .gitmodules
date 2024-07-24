@@ -23,3 +23,6 @@
 [submodule "external/assimp"]
 	path = external/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "external/ufbx"]
+	path = external/ufbx
+	url = https://github.com/ufbx/ufbx.git

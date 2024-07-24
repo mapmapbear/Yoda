@@ -101,10 +101,11 @@ void SkyPass::Render(nvrhi::TextureHandle color_tex,
     psoDesc.PS = ps_shader;
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
     nvrhi::DepthStencilState defaultSt = {};
-    defaultSt.setDepthFunc(nvrhi::ComparisonFunc::Less);
+    defaultSt.setDepthFunc(nvrhi::ComparisonFunc::GreaterOrEqual);
     defaultSt.setDepthTestEnable(false);
     defaultSt.setDepthWriteEnable(true);
     psoDesc.renderState.depthStencilState = defaultSt;
+    psoDesc.renderState.rasterState.depthClipEnable = true;
     psoDesc.addBindingLayout(binding_layout);
     pipeline = render_contex->nvrhi_device->createGraphicsPipeline(psoDesc,
                                                                    framebuffer);
@@ -136,17 +137,45 @@ SkyPass::~SkyPass() {
   hdr_texture = nullptr;
   framebuffer = nullptr;
 }
+
+struct sky_constanct_buffer {
+  glm::mat4 transformMat;
+  glm::vec4 projectVec;
+};
+
 void SkyPass::UpdateRenderdata(FlyCamera camera) {
   nvrhi::CommandListHandle current_command_list_graphics =
       render_contex->get_current_command_list(
           CommandQueueFamily::TYPE_GRAPHICS);
-  current_command_list_graphics->writeTexture(
-      hdr_texture, 0, 0, hdr_tex_data.data,
-      hdr_tex_data.width * hdr_tex_data.comp * sizeof(float));
+  if (is_start_frame) {
+    current_command_list_graphics->writeTexture(
+        hdr_texture, 0, 0, hdr_tex_data.data,
+        hdr_tex_data.width * hdr_tex_data.comp * sizeof(float));
+    is_start_frame = false;
+  }
+  if (is_pre_frame) {
+    struct sky_constanct_buffer buffer;
+    buffer.transformMat = camera.view;
+    buffer.transformMat = camera.proj * buffer.transformMat;
+    buffer.projectVec = glm::vec4(1.0);
+    buffer.projectVec.x = camera.proj[2][0];
+    buffer.projectVec.y = camera.proj[0][0];
+    buffer.projectVec.z = camera.proj[2][1];
+    buffer.projectVec.w = camera.proj[1][1];
+
+
+    buffer.projectVec.x = 0.0;
+    buffer.projectVec.y = camera.proj[0][0];
+    buffer.projectVec.z = 0.0;
+    buffer.projectVec.w = camera.proj[1][1];
+
+    current_command_list_graphics->writeBuffer(constant_buffer, &buffer,
+                                               sizeof(buffer));
+  }
 }
 
 void SkyPass::Resize(nvrhi::TextureHandle col_tex,
-                        nvrhi::TextureHandle depth_tex) {
+                     nvrhi::TextureHandle depth_tex) {
   framebuffer = nullptr;
   nvrhi::DeviceHandle devicePtr = render_contex->nvrhi_device;
   auto framebufferDesc =
@@ -154,6 +183,5 @@ void SkyPass::Resize(nvrhi::TextureHandle col_tex,
           depth_tex);
   framebuffer = devicePtr->createFramebuffer(framebufferDesc);
 }
-
 
 } // namespace Yoda

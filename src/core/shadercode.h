@@ -10,5 +10,7 @@ public:
 
   void compile_shader(nvrhi::ShaderType type, std::string &path,
                       std::string &entry_point);
+  void compile_shader2(nvrhi::ShaderType type, std::string &path,
+                      std::string &entry_point);
 };
 } // namespace Yoda

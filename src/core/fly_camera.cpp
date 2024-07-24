@@ -31,20 +31,25 @@ FlyCamera::FlyCamera(glm::vec3 const _eye, glm::vec3 const _center,
   center = _center;
   up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-  view = glm::lookAt(eye, center, up);
+  view = glm::lookAtLH(eye, center, up);
 
-  proj = glm::perspective(0.6f, aspect_ratio, 1e-1f, 1e4f);
-
+#ifdef REVERT_Z
+  proj = glm::perspectiveLH_ZO(0.6f, aspect_ratio, 1e-1f, 1e4f);
+#else
+  proj = glm::perspectiveLH_ZO(glm::radians(70.0f), aspect_ratio, 1e4f, 1e-1f);
+#endif
   view_proj = proj * view;
-
+  // view_proj = proj;
   prev_view = view;
   prev_proj = proj;
   prev_view_proj = view_proj;
+
+  sky_transform = glm::mat4(1.0);
 }
 
 void FlyCamera::UpdateCamera(SwapChainInfo &info) {
   // Update camera history
-  view = glm::lookAt(eye, center, up);
+  view = glm::lookAtLH(eye, center, up);
   prev_view = view;
   prev_proj = proj;
 
@@ -53,9 +58,9 @@ void FlyCamera::UpdateCamera(SwapChainInfo &info) {
   // Update projection aspect ratio
   float const aspect_ratio = (float)info.width / info.height;
 #ifdef REVERT_Z
-  proj = glm::perspective(0.6f, aspect_ratio, 1e-1f, 1e4f);
+  proj = glm::perspectiveLH_ZO(0.6f, aspect_ratio, 1e-1f, 1e4f);
 #else
-  proj = glm::perspective(0.6f, aspect_ratio, 1e4f, 1e-1f);
+  proj = glm::perspectiveLH_ZO(glm::radians(70.0f), aspect_ratio, 1e4f, 1e-1f);
 #endif
   // Update projection jitter for anti-aliasing
   static uint32_t jitter_index;
@@ -73,7 +78,7 @@ void FlyCamera::UpdateCamera(SwapChainInfo &info) {
                               // jitter doesn't generate velocity values
   prev_proj[2][1] = jitter_y;
 
-  view_proj = proj * view; 
+  view_proj = proj * view;
   prev_view_proj = prev_proj * prev_view;
 }
 
