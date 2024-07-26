@@ -1,3 +1,6 @@
 .vscode
 .xmake
 build
+module
+texture
+fonts

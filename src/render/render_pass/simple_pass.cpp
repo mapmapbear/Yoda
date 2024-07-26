@@ -28,8 +28,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context) {
   ps_shader = context->shader_create_from_bytecode(ps_byte_code.m_type,
                                                    ps_byte_code.m_byte_code);
 
-  //   std::string test_scene_path = "module/sphere_units.fbx";
-  std::string test_scene_path = "module/bistro/BistroExterior.fbx";
+  std::string test_scene_path = "module/sphere_units.fbx";
+  //   std::string test_scene_path = "module/bistro/BistroExterior.fbx";
   bool state = World::load_scene2(test_scene_path, scene_world);
 
   int x, y, n;

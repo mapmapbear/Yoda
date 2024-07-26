@@ -1,5 +1,6 @@
 #pragma once
 #include "core/window.h"
+#include "render/render_pass/gui_pass.h"
 #include "render/world.h"
 #include "rhi/d3d12/rhi_context_d3d12.h"
 #include "rhi/rhi_context.h"
@@ -36,6 +37,7 @@ struct SampleAppConfig {
 };
 class SimplePass;
 class SkyPass;
+class GUIPass;
 class SampleApp : public Window::ICallbacks {
 public:
   SampleApp(const SampleAppConfig &config);
@@ -56,6 +58,7 @@ public:
 public:
   std::shared_ptr<SimplePass> passA;
   std::shared_ptr<SkyPass> passB;
+  std::shared_ptr<GUIPass> passC;
 
 protected:
   // base pass

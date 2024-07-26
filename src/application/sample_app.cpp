@@ -3,6 +3,7 @@
 #include "core/logger.h"
 #include "core/shadercode.h"
 #include "render/mesh.h"
+#include "render/render_pass/gui_pass.h"
 #include "render/render_pass/simple_pass.h"
 #include "render/render_pass/sky_pass.h"
 #include "render/world.h"
@@ -62,6 +63,8 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
 
     passA = std::make_shared<SimplePass>(m_render_context);
     passB = std::make_shared<SkyPass>(m_render_context);
+    passC = std::make_shared<GUIPass>(m_render_context);
+	  passC->init();
   }
 }
 
@@ -151,10 +154,13 @@ void SampleApp::renderFrame() {
   current_command_list_graphics->open();
   passA->UpdateRenderdata(fcamera);
   passB->UpdateRenderdata(fcamera);
+  passC->update_renderdata(frame_time);
+
   // simple pass render
   passB->Render(color_buffer, depth_buffer);
   passA->Render(color_buffer, depth_buffer);
-
+  passC->Render(color_buffer, depth_buffer);
+  
   nvrhi::TextureSlice dst_slice = nvrhi::TextureSlice();
   dst_slice.width = m_render_context->get_swapchain_info().width;
   dst_slice.height = m_render_context->get_swapchain_info().height;

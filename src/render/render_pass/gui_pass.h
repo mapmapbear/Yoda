@@ -1,0 +1,62 @@
+#pragma once
+#include "nvrhi/nvrhi.h"
+#include <imgui.h>
+#include <memory>
+#include <unordered_map>
+
+namespace Yoda {
+class RHIContextD3D12;
+
+class GUIData {
+public:
+  bool init(std::shared_ptr<RHIContextD3D12> context);
+  bool create_font_texture(nvrhi::CommandListHandle commandList);
+  bool updateGeometry(nvrhi::ICommandList *commandList);
+  bool reallocateBuffer(nvrhi::BufferHandle &buffer, size_t requiredSize,
+                        size_t reallocateSize, const bool indexBuffer);
+  nvrhi::BindingSetHandle getBindingSet(nvrhi::ITexture *texture);
+  nvrhi::GraphicsPipelineHandle getPSO(nvrhi::IFramebuffer *fb);
+
+public:
+  std::shared_ptr<RHIContextD3D12> m_context;
+  //nvrhi::CommandListHandle m_commandList;
+
+  nvrhi::ShaderHandle vertexShader;
+  nvrhi::ShaderHandle pixelShader;
+  nvrhi::InputLayoutHandle shaderAttribLayout;
+
+  nvrhi::TextureHandle fontTexture;
+  nvrhi::SamplerHandle fontSampler;
+
+  nvrhi::BufferHandle vertexBuffer;
+  nvrhi::BufferHandle indexBuffer;
+
+  nvrhi::BindingLayoutHandle bindingLayout;
+  nvrhi::GraphicsPipelineDesc basePSODesc;
+
+  nvrhi::GraphicsPipelineHandle pso;
+  std::unordered_map<nvrhi::TextureHandle, nvrhi::BindingSetHandle>
+      bindingsCache;
+
+  std::vector<ImDrawVert> vtxBuffer;
+  std::vector<ImDrawIdx> idxBuffer;
+
+protected:
+  unsigned char *pixels;
+};
+
+class GUIPass {
+public:
+  GUIPass(std::shared_ptr<RHIContextD3D12> context);
+  ~GUIPass();
+  bool init();
+  ImFont *load_font(const std::string &fontFile, float fontSize);
+  void update_renderdata(float delta_time);
+  void Render(nvrhi::TextureHandle color_tex, nvrhi::TextureHandle depth_tex);
+
+protected:
+  std::unique_ptr<GUIData> imgui_data;
+  std::shared_ptr<RHIContextD3D12> m_context;
+  ImFont *m_font = nullptr;
+};
+} // namespace Yoda
