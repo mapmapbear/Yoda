@@ -5,6 +5,7 @@
 #include "nvrhi/nvrhi.h"
 #include "render/render_pass/gui_pass.h"
 #include "rhi/d3d12/rhi_context_d3d12.h"
+#include <cstddef>
 #include <cstdio>
 #include <fstream>
 #include <imgui.h>
@@ -119,7 +120,21 @@ void GUIPass::Render(nvrhi::TextureHandle color_tex,
   ImGui::ShowDemoWindow();
   ImGui::Render();
   ImDrawData *drawData = ImGui::GetDrawData();
-  const auto &io = ImGui::GetIO();
+  auto &io = ImGui::GetIO();
+
+  // reconcile mouse button states
+  // for (size_t i = 0; i < (size_t)5; i++) {
+  //   if (io.MouseDown[i] == true) {
+  //     io.MouseDown[i] = false;
+  //   }
+  // }
+
+  // reconcile key states
+  for (size_t i = 0; i < (size_t)512; i++) {
+    if (io.KeysDown[i] == true) {
+      io.KeysDown[i] = false;
+    }
+  }
 
   current_commandList->beginMarker("ImGUI");
   if (!imgui_data->updateGeometry(current_commandList)) {
@@ -230,6 +245,29 @@ bool GUIPass::mouse_button_update(int button, int action) {
   }
 
   return io.WantCaptureMouse;
+}
+
+bool GUIPass::keybord_update(int key, int action) {
+  auto &io = ImGui::GetIO();
+  bool keyIsDown = false;
+  if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+    keyIsDown = true;
+  } else {
+    keyIsDown = false;
+  }
+  if (keyIsDown) {
+    // if the key was pressed, update ImGui immediately
+    io.KeysDown[key] = true;
+  } else {
+    io.KeysDown[key] = false;
+  }
+  return io.WantCaptureKeyboard;
+}
+
+bool GUIPass::keybord_char_input(int code) {
+  auto &io = ImGui::GetIO();
+  io.AddInputCharacter(code);
+  return io.WantCaptureKeyboard;
 }
 
 GUIPass::~GUIPass() {

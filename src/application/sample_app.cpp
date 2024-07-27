@@ -197,8 +197,15 @@ void SampleApp::handleRenderFrame() {
 }
 
 void SampleApp::handleKeyboardEvent(int key, int action) {
-
+  if (action == -2) // only input char
+  {
+    passC->keybord_char_input(key);
+    return;
+  }
   if (action != GLFW_RELEASE) {
+    if (action == GLFW_PRESS) {
+      passC->keybord_update(key, action);
+    }
     auto frame_time_min = glm::min(static_cast<float>(frame_time), 0.05f);
     glm::vec3 const forward = normalize(fcamera.center - fcamera.eye);
     glm::vec3 const right = cross(forward, fcamera.up);

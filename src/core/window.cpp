@@ -50,9 +50,9 @@ public:
         pWindow->mpCallbacks->handleMouseEvent(-2, x, y);
       }
       state = glfwGetMouseButton(pGlfwWindow, GLFW_MOUSE_BUTTON_LEFT);
-      if (state == GLFW_RELEASE){
+      if (state == GLFW_RELEASE) {
         pWindow->mpCallbacks->handleMouseEvent(0, 0, 0);
-      } else if(state == GLFW_REPEAT){
+      } else if (state == GLFW_REPEAT) {
         double x, y;
         glfwGetCursorPos(pGlfwWindow, &x, &y);
         pWindow->mpCallbacks->handleMouseEvent(-5, x, y);
@@ -74,6 +74,13 @@ public:
       int state1 = glfwGetMouseButton(pGlfwWindow, GLFW_MOUSE_BUTTON_LEFT);
       // if (state1 != GLFW_RELEASE)
       pWindow->mpCallbacks->handleMouseEvent(-3, mouseX, mouseY);
+    }
+  }
+
+  static void charInputCallback(GLFWwindow *pGlfwWindow, uint32_t input) {
+    Window *pWindow = (Window *)glfwGetWindowUserPointer(pGlfwWindow);
+    if (pWindow != nullptr) {
+      pWindow->mpCallbacks->handleKeyboardEvent(input, -2);
     }
   }
 
@@ -161,11 +168,11 @@ Window::Window(const Desc &desc, ICallbacks *pCallbacks)
   glfwSetKeyCallback(mpGLFWWindow, ApiCallbacks::keyboardCallback);
   glfwSetMouseButtonCallback(mpGLFWWindow, ApiCallbacks::mouseButtonCallback);
   // glfwSetInputMode(mpGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+  glfwSetCharCallback(mpGLFWWindow, ApiCallbacks::charInputCallback);
   glfwSetCursorPosCallback(mpGLFWWindow, ApiCallbacks::mouseMoveCallback);
 
   /*glfwSetScrollCallback(mpGLFWWindow, ApiCallbacks::mouseWheelCallback);
-  glfwSetCharCallback(mpGLFWWindow, ApiCallbacks::charInputCallback);
+
   glfwSetDropCallback(mpGLFWWindow, ApiCallbacks::droppedFileCallback);*/
 
   if (desc.mode == WindowMode::Minimized) {

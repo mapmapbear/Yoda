@@ -35,8 +35,6 @@
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <imgui.h>
-// #include <backends/imgui_impl_win32.h>
-// #include <backends/imgui_impl_glfw.h>
 #include <memory>
 #include <string>
 
@@ -63,7 +61,7 @@ public:
   struct Desc {
     uint32_t width = 1920;  ///< The width of the client area size.
     uint32_t height = 1080; ///< The height of the client area size.
-    std::string title = "Falcor Sample";  ///< Window title.
+    std::string title = "Engine Sample";  ///< Window title.
     WindowMode mode = WindowMode::Normal; ///< Window mode. In full screen mode,
                                           ///< width and height will be ignored.
     bool resizableWindow = true; ///< Allow the user to resize the window.
@@ -79,9 +77,6 @@ public:
     virtual void handleRenderFrame() = 0;
     virtual void handleKeyboardEvent(int key, int action) = 0;
     virtual void handleMouseEvent(int action, double x, double y) = 0;
-    /*virtual void handleGamepadEvent(const GamepadEvent& gamepadEvent) = 0;
-    virtual void handleGamepadState(const GamepadState& gamepadState) = 0;*/
-    // virtual void handleDroppedFile(const std::filesystem::path& path) = 0;
   };
 
   /**
@@ -177,6 +172,6 @@ private:
   // float2 mMouseScale;
   // const float2& getMouseScale() const { return mMouseScale; }
   ICallbacks *mpCallbacks = nullptr;
-  ImGuiIO* m_io;
+  ImGuiIO *m_io;
 };
 } // namespace Yoda

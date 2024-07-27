@@ -55,6 +55,8 @@ public:
   void Render(nvrhi::TextureHandle color_tex, nvrhi::TextureHandle depth_tex);
   bool mouse_pos_update(float xpos, float ypos);
   bool mouse_button_update(int button, int action);
+  bool keybord_update(int key, int action);
+  bool keybord_char_input(int code);
 
 protected:
   std::unique_ptr<GUIData> imgui_data;
