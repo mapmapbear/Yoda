@@ -19,7 +19,7 @@ public:
 
 public:
   std::shared_ptr<RHIContextD3D12> m_context;
-  //nvrhi::CommandListHandle m_commandList;
+  // nvrhi::CommandListHandle m_commandList;
 
   nvrhi::ShaderHandle vertexShader;
   nvrhi::ShaderHandle pixelShader;
@@ -53,6 +53,8 @@ public:
   ImFont *load_font(const std::string &fontFile, float fontSize);
   void update_renderdata(float delta_time);
   void Render(nvrhi::TextureHandle color_tex, nvrhi::TextureHandle depth_tex);
+  bool mouse_pos_update(float xpos, float ypos);
+  bool mouse_button_update(int button, int action);
 
 protected:
   std::unique_ptr<GUIData> imgui_data;

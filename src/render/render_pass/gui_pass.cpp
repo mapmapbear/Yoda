@@ -194,6 +194,44 @@ void GUIPass::Render(nvrhi::TextureHandle color_tex,
   current_commandList->endMarker();
 }
 
+bool GUIPass::mouse_pos_update(float xpos, float ypos) {
+  auto &io = ImGui::GetIO();
+  io.MousePos.x = float(xpos);
+  io.MousePos.y = float(ypos);
+
+  return io.WantCaptureMouse;
+}
+
+bool GUIPass::mouse_button_update(int button, int action) {
+  auto &io = ImGui::GetIO();
+  bool buttonIsDown;
+  int buttonIndex;
+  if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+    buttonIsDown = true;
+  } else {
+    buttonIsDown = false;
+  }
+  switch (button) {
+  case GLFW_MOUSE_BUTTON_LEFT:
+    buttonIndex = 0;
+    break;
+  case GLFW_MOUSE_BUTTON_RIGHT:
+    buttonIndex = 1;
+    break;
+  case GLFW_MOUSE_BUTTON_MIDDLE:
+    buttonIndex = 2;
+    break;
+  }
+  if (buttonIsDown) {
+    // update ImGui state immediately
+    io.MouseDown[buttonIndex] = true;
+  } else {
+    io.MouseDown[buttonIndex] = false;
+  }
+
+  return io.WantCaptureMouse;
+}
+
 GUIPass::~GUIPass() {
   imgui_data->vertexShader = nullptr;
   imgui_data->pixelShader = nullptr;
@@ -315,7 +353,7 @@ bool GUIData::create_font_texture(nvrhi::CommandListHandle commandList) {
     desc.debugName = "ImGui font texture";
     desc.initialState = nvrhi::ResourceStates::ShaderResource;
     desc.keepInitialState = true;
-    
+
     fontTexture = m_context->nvrhi_device->createTexture(desc);
 
     io.Fonts->TexID = fontTexture;

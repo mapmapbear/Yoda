@@ -1,4 +1,5 @@
 #include "core/window.h"
+#include "core/logger.h"
 // #include "Macros.h"
 // #include "Error.h"
 // #include "ObjectPython.h"
@@ -43,11 +44,22 @@ public:
     Window *pWindow = (Window *)glfwGetWindowUserPointer(pGlfwWindow);
     if (pWindow != nullptr) {
       int state = glfwGetMouseButton(pGlfwWindow, GLFW_MOUSE_BUTTON_RIGHT);
-      if (state == GLFW_PRESS)
-      {
+      if (state == GLFW_PRESS) {
         double x, y;
         glfwGetCursorPos(pGlfwWindow, &x, &y);
         pWindow->mpCallbacks->handleMouseEvent(-2, x, y);
+      }
+      state = glfwGetMouseButton(pGlfwWindow, GLFW_MOUSE_BUTTON_LEFT);
+      if (state == GLFW_RELEASE){
+        pWindow->mpCallbacks->handleMouseEvent(0, 0, 0);
+      } else if(state == GLFW_REPEAT){
+        double x, y;
+        glfwGetCursorPos(pGlfwWindow, &x, &y);
+        pWindow->mpCallbacks->handleMouseEvent(-5, x, y);
+      } else {
+        double x, y;
+        glfwGetCursorPos(pGlfwWindow, &x, &y);
+        pWindow->mpCallbacks->handleMouseEvent(-4, x, y);
       }
     }
   }
@@ -59,6 +71,9 @@ public:
       int state = glfwGetMouseButton(pGlfwWindow, GLFW_MOUSE_BUTTON_RIGHT);
       if (state != GLFW_RELEASE)
         pWindow->mpCallbacks->handleMouseEvent(state, mouseX, mouseY);
+      int state1 = glfwGetMouseButton(pGlfwWindow, GLFW_MOUSE_BUTTON_LEFT);
+      // if (state1 != GLFW_RELEASE)
+      pWindow->mpCallbacks->handleMouseEvent(-3, mouseX, mouseY);
     }
   }
 
@@ -97,24 +112,6 @@ std::shared_ptr<Window> Window::create(const Desc &desc,
 
 Window::Window(const Desc &desc, ICallbacks *pCallbacks)
     : mDesc(desc), mpCallbacks(pCallbacks) {
-  // Setup Dear ImGui context
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  m_io = &ImGui::GetIO();
-  m_io->ConfigFlags |=
-      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-  m_io->ConfigFlags |=
-      ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-  m_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
-  // Multi-Viewport / Platform Windows
-  // IO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable
-
-  ImGui::StyleColorsDark();
-  ImGuiStyle &Style = ImGui::GetStyle();
-  if (m_io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-    Style.WindowRounding = 0.0f;
-    Style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-  }
   // Set error callback
   glfwSetErrorCallback(ApiCallbacks::errorCallback);
   // Init GLFW when first window is created.
@@ -226,8 +223,8 @@ void Window::msgLoop() {
   // Samples often rely on a size change event as part of initialization
   // This would have happened from a WM_SIZE message when calling ShowWindow on
   // Win32
-  
-  //mpCallbacks->handleWindowSizeChange();
+
+  // mpCallbacks->handleWindowSizeChange();
 
   while (!shouldClose()) {
     pollForEvents();

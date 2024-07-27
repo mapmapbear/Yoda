@@ -64,7 +64,7 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     passA = std::make_shared<SimplePass>(m_render_context);
     passB = std::make_shared<SkyPass>(m_render_context);
     passC = std::make_shared<GUIPass>(m_render_context);
-	  passC->init();
+    passC->init();
   }
 }
 
@@ -160,7 +160,7 @@ void SampleApp::renderFrame() {
   passB->Render(color_buffer, depth_buffer);
   passA->Render(color_buffer, depth_buffer);
   passC->Render(color_buffer, depth_buffer);
-  
+
   nvrhi::TextureSlice dst_slice = nvrhi::TextureSlice();
   dst_slice.width = m_render_context->get_swapchain_info().width;
   dst_slice.height = m_render_context->get_swapchain_info().height;
@@ -262,7 +262,17 @@ void SampleApp::handleKeyboardEvent(int key, int action) {
 }
 
 void SampleApp::handleMouseEvent(int action, double x, double y) {
-  if (action != -2) {
+  if (action == -2) {
+    mouse_pos = glm::vec2(x, y);
+  } else if (action == 0) {
+    passC->mouse_button_update(GLFW_MOUSE_BUTTON_LEFT, 0);
+  } else if (action == -4) {
+    passC->mouse_button_update(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS);
+  } else if (action == -5) {
+    passC->mouse_button_update(GLFW_MOUSE_BUTTON_LEFT, GLFW_REPEAT);
+  } else if (action == -3) {
+    passC->mouse_pos_update(x, y);
+  } else {
     auto frame_time_min = glm::min(static_cast<float>(frame_time), 0.05f);
     glm::vec3 const forward = normalize(fcamera.center - fcamera.eye);
     glm::vec3 const right = cross(forward, fcamera.up);
@@ -302,8 +312,6 @@ void SampleApp::handleMouseEvent(int action, double x, double y) {
       fcamera.UpdateCamera(info);
       mouse_pos = glm::vec2(x, y);
     }
-  } else {
-    mouse_pos = glm::vec2(x, y);
   }
 }
 } // namespace Yoda
