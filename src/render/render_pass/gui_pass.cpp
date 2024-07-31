@@ -8,17 +8,20 @@
 #include <cstddef>
 #include <cstdio>
 #include <fstream>
+#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <memory>
+#include <vector>
 
 #define GLFW_INCLUDE_NONE // Do not include any OpenGL headers
 #include <GLFW/glfw3.h>
 
 namespace Yoda {
-GUIPass::GUIPass(std::shared_ptr<RHIContextD3D12> context) {
+GUIPass::GUIPass(std::shared_ptr<RHIContextD3D12> context, World &world) {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   m_context = context;
+  scene_world = world;
 }
 
 bool GUIPass::init() {
@@ -46,7 +49,8 @@ bool GUIPass::init() {
   io.DisplaySize = ImVec2((float)(900), (float)(600));
   io.DisplaySize = ImVec2((float)(m_context->get_swapchain_info().width),
                           (float)(m_context->get_swapchain_info().height));
-
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
+  ImGui::StyleColorsLight();
   io.IniFilename = nullptr;
   imgui_data = std::make_unique<GUIData>();
   //   m_font = load_font("fonts/DroidSans-Mono.ttf", 14.f);
@@ -107,6 +111,55 @@ void GUIPass::update_renderdata(float delta_time) {
   ImGui::NewFrame();
 }
 
+void GUIPass::build_UI() {
+  ImGui::Begin("test Text");
+  ImGui::Text("test node");
+  ImGui::End();
+
+  ImGui::Begin("Node Tree");
+  if (ImGui::TreeNode("Scene Graph")) {
+    for (int i = 0; i < scene_world.node_tree.size(); i++) {
+      if (i == 0)
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+
+      if (ImGui::TreeNode((void *)(intptr_t)i,
+                          scene_world.node_tree[i]->node_name.c_str(), i)) {
+        float posArr[3] = {
+            scene_world.node_tree[i]->m_local_transform.translation.x,
+            scene_world.node_tree[i]->m_local_transform.translation.y,
+            scene_world.node_tree[i]->m_local_transform.translation.z};
+        ImGui::SeparatorText("Position");
+        // ImGui::InputFloat3(
+        //     "", glm::value_ptr(
+        //             scene_world.node_tree[i]->m_local_transform.translation));
+        ImGui::DragFloat3("##1", glm::value_ptr(
+                    scene_world.node_tree[i]->m_local_transform.translation));
+        ImGui::SeparatorText("Rotation");
+        ImGui::DragFloat4(
+            "##2", glm::value_ptr(
+                    scene_world.node_tree[i]->m_local_transform.rotation));
+        ImGui::SeparatorText("Scale");
+        ImGui::DragFloat3(
+            "##3",
+            glm::value_ptr(scene_world.node_tree[i]->m_local_transform.scale));
+        if (!scene_world.node_tree[i]->child_nodes.empty()) {
+          for (int j = 0; j < scene_world.node_tree[i]->child_nodes.size();
+               ++j) {
+            ImGui::TreeNode(
+                (void *)(intptr_t)i,
+                scene_world.node_tree[i]->child_nodes[j]->node_name.c_str(), i);
+
+            ImGui::TreePop();
+          }
+        }
+        ImGui::TreePop();
+      }
+    }
+    ImGui::TreePop();
+  }
+  ImGui::End();
+};
+
 void GUIPass::Render(nvrhi::TextureHandle color_tex,
                      nvrhi::TextureHandle depth_tex) {
   auto framebufferDesc =
@@ -118,6 +171,7 @@ void GUIPass::Render(nvrhi::TextureHandle color_tex,
       m_context->get_current_command_list(CommandQueueFamily::TYPE_GRAPHICS);
 
   ImGui::ShowDemoWindow();
+  build_UI();
   ImGui::Render();
   ImDrawData *drawData = ImGui::GetDrawData();
   auto &io = ImGui::GetIO();
@@ -269,6 +323,8 @@ bool GUIPass::keybord_char_input(int code) {
   io.AddInputCharacter(code);
   return io.WantCaptureKeyboard;
 }
+
+void GUIPass::set_world_scene(World &world) { scene_world = world; }
 
 GUIPass::~GUIPass() {
   imgui_data->vertexShader = nullptr;

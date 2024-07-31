@@ -9,7 +9,7 @@ class FlyCamera;
 
 class SimplePass {
 public:
-  SimplePass(std::shared_ptr<RHIContextD3D12> context);
+  SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd);
   ~SimplePass();
   void Render(nvrhi::TextureHandle col_tex, nvrhi::TextureHandle depth_tex);
   void PreZ_Render(nvrhi::TextureHandle col_tex,

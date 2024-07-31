@@ -1,12 +1,14 @@
 #pragma once
 #include "nvrhi/nvrhi.h"
+#include "render/world.h"
+#include "ufbx.h"
 #include <imgui.h>
 #include <memory>
 #include <unordered_map>
 
 namespace Yoda {
 class RHIContextD3D12;
-
+class World;
 class GUIData {
 public:
   bool init(std::shared_ptr<RHIContextD3D12> context);
@@ -47,7 +49,7 @@ protected:
 
 class GUIPass {
 public:
-  GUIPass(std::shared_ptr<RHIContextD3D12> context);
+  GUIPass(std::shared_ptr<RHIContextD3D12> context, World& world);
   ~GUIPass();
   bool init();
   ImFont *load_font(const std::string &fontFile, float fontSize);
@@ -57,10 +59,13 @@ public:
   bool mouse_button_update(int button, int action);
   bool keybord_update(int key, int action);
   bool keybord_char_input(int code);
+  void build_UI();
+  void set_world_scene(World &world);
 
 protected:
   std::unique_ptr<GUIData> imgui_data;
   std::shared_ptr<RHIContextD3D12> m_context;
   ImFont *m_font = nullptr;
+  World scene_world;
 };
 } // namespace Yoda

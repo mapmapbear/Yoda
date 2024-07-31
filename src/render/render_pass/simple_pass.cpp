@@ -3,18 +3,21 @@
 #include "core/shadercode.h"
 #include "glm/trigonometric.hpp"
 #include "nvrhi/nvrhi.h"
+#include "render/world.h"
 #include "rhi/d3d12/rhi_context_d3d12.h"
 #include "rhi/rhi_context_commons.h"
 #include <glm/gtc/quaternion.hpp>
 #include <nvrhi/utils.h>
 #include <vector>
 
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 namespace Yoda {
-SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context) {
+SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
   render_contex = context;
+  scene_world = wolrd;
   ShaderByteCode vs_byte_code;
   std::string path = "shaders/basic_triangle.hlsl";
   std::string entry_point = "main_vs";
@@ -27,11 +30,6 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context) {
                                                    vs_byte_code.m_byte_code);
   ps_shader = context->shader_create_from_bytecode(ps_byte_code.m_type,
                                                    ps_byte_code.m_byte_code);
-
-  std::string test_scene_path = "module/sphere.fbx";
-  //   std::string test_scene_path = "module/bistro/BistroExterior.fbx";
-  bool state = World::load_scene2(test_scene_path, scene_world);
-
   int x, y, n;
   albedo_raw_data = stbi_load("textures/test.png", &x, &y, &n, 4);
 
@@ -372,5 +370,7 @@ void SimplePass::Resize(nvrhi::TextureHandle col_tex,
           depth_tex);
   framebuffer = devicePtr->createFramebuffer(framebufferDesc);
 }
+
+void SimplePass::set_world_scene(World &world) { scene_world = world; }
 
 } // namespace Yoda

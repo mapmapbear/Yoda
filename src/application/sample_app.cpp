@@ -34,10 +34,10 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     m_render_context = std::make_shared<RHIContextD3D12>();
     m_render_context->initialize(m_window->getApiHandle());
 
-    // std::string test_scene_path = "module/sphere_units.fbx";
-    //  std::string test_scene_path = "module/crag.fbx";
-    //   bool state = Mesh::load_scene(test_scene_path, scene_world);
-    //   state = World::load_scene1(test_scene_path, scene_world);
+    std::string test_scene_path = "module/aaa.fbx";
+    //std::string test_scene_path1 = "module/bistro/BistroExterior.fbx";
+    bool state = World::load_scene2(test_scene_path, scene_world);
+    //state = World::load_scene2(test_scene_path1, scene_world1);
 
     fcamera =
         FlyCamera{glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f),
@@ -61,9 +61,9 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     depth_texture_desc.debugName = "Pass A Depth Buffer";
     depth_buffer = m_render_context->texture_create(depth_texture_desc);
 
-    passA = std::make_shared<SimplePass>(m_render_context);
+    passA = std::make_shared<SimplePass>(m_render_context, scene_world);
     passB = std::make_shared<SkyPass>(m_render_context);
-    passC = std::make_shared<GUIPass>(m_render_context);
+    passC = std::make_shared<GUIPass>(m_render_context, scene_world);
     passC->init();
   }
 }

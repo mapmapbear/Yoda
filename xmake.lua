@@ -87,7 +87,7 @@ add_requires("nvrhi")
 add_requires("directxshadercompiler")
 add_requires("glm")
 add_requires("assimp")
-add_requires("imgui", {debug=true})
+add_requires("imgui docking")
 add_requires("ufbx")
 
 target("sandbox")
