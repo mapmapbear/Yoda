@@ -371,6 +371,4 @@ void SimplePass::Resize(nvrhi::TextureHandle col_tex,
   framebuffer = devicePtr->createFramebuffer(framebufferDesc);
 }
 
-void SimplePass::set_world_scene(World &world) { scene_world = world; }
-
 } // namespace Yoda
