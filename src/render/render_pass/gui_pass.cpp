@@ -109,54 +109,83 @@ void GUIPass::update_renderdata(float delta_time) {
   io.MouseDrawCursor = false;
 
   ImGui::NewFrame();
+
+  static ImGuiDockNodeFlags dockspace_flags =
+      ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_PassthruCentralNode;
+  const ImGuiViewport *viewport = ImGui::GetMainViewport();
+  ImGui::SetNextWindowPos(viewport->WorkPos);
+  ImGui::SetNextWindowSize(viewport->WorkSize);
+  ImGui::SetNextWindowViewport(viewport->ID);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+  window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+  window_flags |=
+      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+  if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) {
+    window_flags |= ImGuiWindowFlags_NoBackground;
+  }
+
+  ImGui::Begin("DockSpace", nullptr, window_flags);
+  ImGui::PopStyleVar();
+  ImGui::PopStyleVar(2);
+
+  ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+  ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+  ImGui::End();
+}
+
+bool show_scene_node(std::shared_ptr<Node> node, int index, bool state = true) {
+  bool node_state =
+      ImGui::TreeNode((void *)(intptr_t)index, node->node_name.c_str(), index);
+  if (!node->child_nodes.empty()) {
+    for (int j = 0; j < node->child_nodes.size(); ++j) {
+      if (node_state) {
+        return show_scene_node(node->child_nodes.at(j), j, node_state);
+      }
+    }
+  }
+  if (node_state) {
+    ImGui::TreePop();
+  }
+  return node_state;
 }
 
 void GUIPass::build_UI() {
-  ImGui::Begin("test Text");
-  ImGui::Text("test node");
-  ImGui::End();
-
+  bool node_state = false;
+  std::shared_ptr<Node> active_node = scene_world.node_tree[0];
   ImGui::Begin("Node Tree");
+  ImGui::BeginChild("Child1", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY,
+                    ImGuiWindowFlags_AlwaysAutoResize);
   if (ImGui::TreeNode("Scene Graph")) {
     for (int i = 0; i < scene_world.node_tree.size(); i++) {
-      if (i == 0)
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-
-      if (ImGui::TreeNode((void *)(intptr_t)i,
-                          scene_world.node_tree[i]->node_name.c_str(), i)) {
-        float posArr[3] = {
-            scene_world.node_tree[i]->m_local_transform.translation.x,
-            scene_world.node_tree[i]->m_local_transform.translation.y,
-            scene_world.node_tree[i]->m_local_transform.translation.z};
-        ImGui::SeparatorText("Position");
-        // ImGui::InputFloat3(
-        //     "", glm::value_ptr(
-        //             scene_world.node_tree[i]->m_local_transform.translation));
-        ImGui::DragFloat3("##1", glm::value_ptr(
-                    scene_world.node_tree[i]->m_local_transform.translation));
-        ImGui::SeparatorText("Rotation");
-        ImGui::DragFloat4(
-            "##2", glm::value_ptr(
-                    scene_world.node_tree[i]->m_local_transform.rotation));
-        ImGui::SeparatorText("Scale");
-        ImGui::DragFloat3(
-            "##3",
-            glm::value_ptr(scene_world.node_tree[i]->m_local_transform.scale));
-        if (!scene_world.node_tree[i]->child_nodes.empty()) {
-          for (int j = 0; j < scene_world.node_tree[i]->child_nodes.size();
-               ++j) {
-            ImGui::TreeNode(
-                (void *)(intptr_t)i,
-                scene_world.node_tree[i]->child_nodes[j]->node_name.c_str(), i);
-
-            ImGui::TreePop();
-          }
-        }
-        ImGui::TreePop();
-      }
+      node_state = show_scene_node(scene_world.node_tree[i], i);
     }
     ImGui::TreePop();
   }
+  ImGui::EndChild();
+
+  ImGui::Separator();
+  
+  ImGui::BeginChild("Transform", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY,
+                    ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::SeparatorText("Position");
+  ImGui::DragFloat3(
+      "##1",
+      glm::value_ptr(scene_world.node_tree[0]->m_local_transform.translation));
+  ImGui::SeparatorText("Rotation");
+  ImGui::DragFloat4(
+      "##2",
+      glm::value_ptr(scene_world.node_tree[0]->m_local_transform.rotation));
+  ImGui::SeparatorText("Scale");
+  ImGui::DragFloat3(
+      "##3", glm::value_ptr(scene_world.node_tree[0]->m_local_transform.scale));
+
+  ImGui::EndChild();
+
   ImGui::End();
 };
 

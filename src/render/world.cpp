@@ -10,6 +10,7 @@
 #include <ufbx.h>
 
 #include <stb_image.h>
+#include <unordered_map>
 
 namespace Yoda {
 
@@ -145,6 +146,7 @@ bool parse_material(ufbx_scene *scene, World &world) {
   return true;
 }
 
+std::unordered_map<const ufbx_node *, std::shared_ptr<Node>> node_looked_map;
 std::shared_ptr<Node> parse_node(const ufbx_node *parent_node) {
   Node render_node;
   const ufbx_node *fbx_node = parent_node;
@@ -175,27 +177,32 @@ std::shared_ptr<Node> parse_node(const ufbx_node *parent_node) {
   rotation_mat =
       glm::mat4_cast(glm::quat(render_node.m_local_transform.rotation));
   render_node.m_transform = scale_mat * rotation_mat * translate_mat;
-  // if (fbx_node->children.count != 0) {
-  //   for (const ufbx_node *child : fbx_node->children) {
-  //     render_node.child_nodes.emplace_back(parse_node(fbx_node));
-  //   }
-  // }
-
+  if (parent_node->children.count > 0) {
+    for (int i = 0; i < parent_node->children.count; ++i) {
+      ufbx_node *son_node = parent_node->children[i];
+      render_node.child_nodes.emplace_back(parse_node(son_node));
+    }
+  }
   return std::make_shared<Node>(render_node);
-
-  // One node, One mesh
-  // if (fbx_node->mesh) {
-  //   render_node.m_mesh = world.mesh_map.at(
-  //       std::string(fbx_node->name.data, fbx_node->name.length));
-  // }
 }
 
 bool parse_scene_node(ufbx_scene *scene, World &world) {
   for (int node_i = 0; node_i < static_cast<int>(scene->nodes.count);
        node_i++) {
     const ufbx_node *fbx_node = scene->nodes[node_i];
-    if (!fbx_node->is_root)
-      world.node_tree.emplace_back(parse_node(fbx_node));
+    if (!fbx_node->is_root) {
+      auto iter = node_looked_map.find(fbx_node->parent);
+      if (iter != node_looked_map.end()) {
+        node_looked_map.insert({fbx_node, nullptr});
+      } else {
+        std::shared_ptr<Node> current_node = parse_node(fbx_node);
+        node_looked_map.insert({fbx_node, current_node});
+        world.node_tree.emplace_back(current_node);
+      }
+    }
+  }
+  for (int node_i = 0; node_i < static_cast<int>(scene->nodes.count);
+       node_i++) {
   }
   return true;
 }
