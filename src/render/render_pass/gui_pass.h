@@ -63,6 +63,10 @@ public:
   void set_world_scene(World *world);
 
 protected:
+  bool show_scene_node(std::shared_ptr<Node> node, int index,
+                       bool state = true);
+
+protected:
   std::unique_ptr<GUIData> imgui_data;
   std::shared_ptr<RHIContextD3D12> m_context;
   ImFont *m_font = nullptr;
