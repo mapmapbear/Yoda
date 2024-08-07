@@ -1,4 +1,5 @@
 #include "world.h"
+#include "components/transform_components.h"
 #include "core/logger.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
@@ -207,6 +208,55 @@ bool parse_scene_node(ufbx_scene *scene, World &world) {
   return true;
 }
 
+std::unordered_map<const ufbx_node *, std::shared_ptr<NewNode>>
+    newnode_looked_map;
+bool World::load_scene1(std::string &path, World &world) {
+  ufbx_load_opts opts = {}; // Optional, pass NULL for defaults
+  ufbx_error error; // Optional, pass NULL if you don't care about errors
+  ufbx_scene *scene = ufbx_load_file(path.c_str(), &opts, &error);
+  if (!scene) {
+    fprintf(stderr, "Failed to load: %s\n", error.description.data);
+    exit(1);
+  }
+  for (int node_i = 0; node_i < static_cast<int>(scene->nodes.count);
+       node_i++) {
+    const ufbx_node *fbx_node = scene->nodes[node_i];
+
+    if (fbx_node->is_root)
+      continue;
+    if (fbx_node->parent && !fbx_node->is_root) {
+
+      auto entity = world.m_registry.create();
+      TransformComp local_transform;
+      local_transform.transform_mat = glm::mat4(1.0);
+      local_transform.position =
+          glm::vec3(fbx_node->local_transform.translation.x,
+                    fbx_node->local_transform.translation.y,
+                    fbx_node->local_transform.translation.z);
+      local_transform.rotation =
+          glm::vec4(fbx_node->local_transform.rotation.x,
+                    fbx_node->local_transform.rotation.y,
+                    fbx_node->local_transform.rotation.z,
+                    fbx_node->local_transform.rotation.w);
+      local_transform.scale = glm::vec3(fbx_node->local_transform.scale.x,
+                                        fbx_node->local_transform.scale.y,
+                                        fbx_node->local_transform.scale.z);
+      world.m_registry.emplace<TransformComp>(entity, local_transform);
+      std::shared_ptr<NewNode> current_node =
+          std::make_shared<NewNode>(world, entity);
+      if (newnode_looked_map.find(fbx_node) != newnode_looked_map.end()) {
+        std::shared_ptr<NewNode> present_node = newnode_looked_map[fbx_node];
+        current_node->parent = present_node;
+        present_node->childs.emplace_back(current_node);
+        newnode_looked_map.insert({fbx_node, current_node});
+      } else {
+        current_node->parent = nullptr;
+        newnode_looked_map.insert({fbx_node, current_node});
+      }
+    }
+  }
+  return true;
+}
 bool World::load_scene2(std::string &path, World &world) {
   ufbx_load_opts opts = {}; // Optional, pass NULL for defaults
   ufbx_error error; // Optional, pass NULL if you don't care about errors

@@ -6,10 +6,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "entt/entt.hpp"
+
 namespace Yoda {
 class Mesh;
 class Material;
 class Node;
+
 class World {
 public:
   World() { mesh_group = {}; }
@@ -25,5 +28,7 @@ public:
   std::vector<std::shared_ptr<Material>> mat_group;
   std::vector<std::shared_ptr<Node>> node_tree;
   std::unordered_map<std::string, std::shared_ptr<Mesh>> mesh_map;
+  std::shared_ptr<Node> active_node;
+  entt::registry m_registry;
 };
 } // namespace Yoda

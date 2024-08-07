@@ -17,7 +17,7 @@
 #include <GLFW/glfw3.h>
 
 namespace Yoda {
-GUIPass::GUIPass(std::shared_ptr<RHIContextD3D12> context, World &world) {
+GUIPass::GUIPass(std::shared_ptr<RHIContextD3D12> context, World *world) {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   m_context = context;
@@ -137,52 +137,59 @@ void GUIPass::update_renderdata(float delta_time) {
 
   ImGui::End();
 }
+std::shared_ptr<Node> active_node;
 
 bool show_scene_node(std::shared_ptr<Node> node, int index, bool state = true) {
-  bool node_state =
-      ImGui::TreeNode((void *)(intptr_t)index, node->node_name.c_str(), index);
   if (!node->child_nodes.empty()) {
-    for (int j = 0; j < node->child_nodes.size(); ++j) {
-      if (node_state) {
-        return show_scene_node(node->child_nodes.at(j), j, node_state);
+    if (ImGui::TreeNode((void *)(intptr_t)index, node->node_name.c_str(),
+                        index)) {
+      active_node = node;
+      for (int j = 0; j < node->child_nodes.size(); ++j) {
+        show_scene_node(node->child_nodes.at(j), j);
       }
+      ImGui::TreePop();
+      return true;
+    } else
+      return false;
+  } else {
+    auto flag = ImGuiTreeNodeFlags_OpenOnArrow |
+                ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                // ImGuiTreeNodeFlags_SpanAvailWidth |
+                ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    ImGui::TreeNodeEx((void *)(intptr_t)index, flag, node->node_name.c_str());
+    if (ImGui::IsItemClicked()) {
+      active_node = node;
     }
+    return false;
   }
-  if (node_state) {
-    ImGui::TreePop();
-  }
-  return node_state;
 }
-
 void GUIPass::build_UI() {
   bool node_state = false;
-  std::shared_ptr<Node> active_node = scene_world.node_tree[0];
+  active_node = scene_world->node_tree[0];
   ImGui::Begin("Node Tree");
   ImGui::BeginChild("Child1", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY,
                     ImGuiWindowFlags_AlwaysAutoResize);
   if (ImGui::TreeNode("Scene Graph")) {
-    for (int i = 0; i < scene_world.node_tree.size(); i++) {
-      node_state = show_scene_node(scene_world.node_tree[i], i);
+    for (int i = 0; i < scene_world->node_tree.size(); i++) {
+      show_scene_node(scene_world->node_tree[i], i);
     }
     ImGui::TreePop();
   }
   ImGui::EndChild();
 
   ImGui::Separator();
-  
+
   ImGui::BeginChild("Transform", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY,
                     ImGuiWindowFlags_AlwaysAutoResize);
   ImGui::SeparatorText("Position");
-  ImGui::DragFloat3(
-      "##1",
-      glm::value_ptr(scene_world.node_tree[0]->m_local_transform.translation));
+  ImGui::DragFloat3("##1",
+                    glm::value_ptr(active_node->m_local_transform.translation));
   ImGui::SeparatorText("Rotation");
-  ImGui::DragFloat4(
-      "##2",
-      glm::value_ptr(scene_world.node_tree[0]->m_local_transform.rotation));
+  ImGui::DragFloat4("##2",
+                    glm::value_ptr(active_node->m_local_transform.rotation));
   ImGui::SeparatorText("Scale");
-  ImGui::DragFloat3(
-      "##3", glm::value_ptr(scene_world.node_tree[0]->m_local_transform.scale));
+  ImGui::DragFloat3("##3",
+                    glm::value_ptr(active_node->m_local_transform.scale));
 
   ImGui::EndChild();
 
@@ -353,7 +360,7 @@ bool GUIPass::keybord_char_input(int code) {
   return io.WantCaptureKeyboard;
 }
 
-void GUIPass::set_world_scene(World &world) { scene_world = world; }
+void GUIPass::set_world_scene(World *world) { scene_world = world; }
 
 GUIPass::~GUIPass() {
   imgui_data->vertexShader = nullptr;

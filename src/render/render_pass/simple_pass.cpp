@@ -15,7 +15,7 @@
 #include <stb_image.h>
 
 namespace Yoda {
-SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
+SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World* wolrd) {
   render_contex = context;
   scene_world = wolrd;
   ShaderByteCode vs_byte_code;
@@ -83,8 +83,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
   // Create Vertex Buffer
   nvrhi::BufferDesc vertexBufferDesc;
   vertexBufferDesc.byteSize =
-      sizeof(scene_world.mesh_group[0]->positions_stream[0]) *
-      scene_world.mesh_group[0]->positions_stream.size();
+      sizeof(scene_world->mesh_group[0]->positions_stream[0]) *
+      scene_world->mesh_group[0]->positions_stream.size();
   vertexBufferDesc.isVertexBuffer = true;
   vertexBufferDesc.debugName = "VertexBuffer";
   vertexBufferDesc.initialState = nvrhi::ResourceStates::CopyDest;
@@ -92,8 +92,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
 
   nvrhi::BufferDesc vertexUVBufferDesc;
   vertexUVBufferDesc.byteSize =
-      sizeof(scene_world.mesh_group[0]->UVs_stream[0]) *
-      scene_world.mesh_group[0]->UVs_stream.size();
+      sizeof(scene_world->mesh_group[0]->UVs_stream[0]) *
+      scene_world->mesh_group[0]->UVs_stream.size();
   vertexUVBufferDesc.isVertexBuffer = true;
   vertexUVBufferDesc.debugName = "UV Buffer";
   vertexUVBufferDesc.initialState = nvrhi::ResourceStates::CopyDest;
@@ -101,8 +101,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
 
   nvrhi::BufferDesc vertexNormalBufferDesc;
   vertexNormalBufferDesc.byteSize =
-      sizeof(scene_world.mesh_group[0]->normals_stream[0]) *
-      scene_world.mesh_group[0]->normals_stream.size();
+      sizeof(scene_world->mesh_group[0]->normals_stream[0]) *
+      scene_world->mesh_group[0]->normals_stream.size();
   vertexNormalBufferDesc.isVertexBuffer = true;
   vertexNormalBufferDesc.debugName = "Normal Buffer";
   vertexNormalBufferDesc.initialState = nvrhi::ResourceStates::CopyDest;
@@ -110,8 +110,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
 
   nvrhi::BufferDesc vertexBiNormalBufferDesc;
   vertexBiNormalBufferDesc.byteSize =
-      sizeof(scene_world.mesh_group[0]->normals_stream[0]) *
-      scene_world.mesh_group[0]->normals_stream.size();
+      sizeof(scene_world->mesh_group[0]->normals_stream[0]) *
+      scene_world->mesh_group[0]->normals_stream.size();
   vertexBiNormalBufferDesc.isVertexBuffer = true;
   vertexBiNormalBufferDesc.debugName = "BiNormal Buffer";
   vertexBiNormalBufferDesc.initialState = nvrhi::ResourceStates::CopyDest;
@@ -119,16 +119,16 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World& wolrd) {
 
   nvrhi::BufferDesc vertexTangentBufferDesc;
   vertexTangentBufferDesc.byteSize =
-      sizeof(scene_world.mesh_group[0]->tangents_stream[0]) *
-      scene_world.mesh_group[0]->tangents_stream.size();
+      sizeof(scene_world->mesh_group[0]->tangents_stream[0]) *
+      scene_world->mesh_group[0]->tangents_stream.size();
   vertexTangentBufferDesc.isVertexBuffer = true;
   vertexTangentBufferDesc.debugName = "Tangent Buffer";
   vertexTangentBufferDesc.initialState = nvrhi::ResourceStates::CopyDest;
   tangent_buffer = device->createBuffer(vertexTangentBufferDesc);
 
   nvrhi::BufferDesc indexBufferDesc;
-  indexBufferDesc.byteSize = sizeof(scene_world.mesh_group[0]->indices[0]) *
-                             scene_world.mesh_group[0]->indices.size();
+  indexBufferDesc.byteSize = sizeof(scene_world->mesh_group[0]->indices[0]) *
+                             scene_world->mesh_group[0]->indices.size();
   indexBufferDesc.isIndexBuffer = true;
   indexBufferDesc.debugName = "IndexBuffer";
   indexBufferDesc.initialState = nvrhi::ResourceStates::CopyDest;
@@ -196,49 +196,49 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
     current_copy_commandlist->beginTrackingBufferState(
         vertex_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
-        vertex_buffer, scene_world.mesh_group[0]->positions_stream.data(),
-        sizeof(glm::vec3) * scene_world.mesh_group[0]->positions_stream.size());
+        vertex_buffer, scene_world->mesh_group[0]->positions_stream.data(),
+        sizeof(glm::vec3) * scene_world->mesh_group[0]->positions_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         vertex_buffer, nvrhi::ResourceStates::VertexBuffer);
 
     current_copy_commandlist->beginTrackingBufferState(
         uv_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
-        uv_buffer, scene_world.mesh_group[0]->UVs_stream.data(),
-        sizeof(glm::vec2) * scene_world.mesh_group[0]->UVs_stream.size());
+        uv_buffer, scene_world->mesh_group[0]->UVs_stream.data(),
+        sizeof(glm::vec2) * scene_world->mesh_group[0]->UVs_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         uv_buffer, nvrhi::ResourceStates::VertexBuffer);
 
     current_copy_commandlist->beginTrackingBufferState(
         normal_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
-        normal_buffer, scene_world.mesh_group[0]->normals_stream.data(),
-        sizeof(glm::vec2) * scene_world.mesh_group[0]->normals_stream.size());
+        normal_buffer, scene_world->mesh_group[0]->normals_stream.data(),
+        sizeof(glm::vec2) * scene_world->mesh_group[0]->normals_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         normal_buffer, nvrhi::ResourceStates::VertexBuffer);
 
     current_copy_commandlist->beginTrackingBufferState(
         binormal_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
-        binormal_buffer, scene_world.mesh_group[0]->tangents_stream.data(),
-        sizeof(glm::vec2) * scene_world.mesh_group[0]->tangents_stream.size());
+        binormal_buffer, scene_world->mesh_group[0]->tangents_stream.data(),
+        sizeof(glm::vec2) * scene_world->mesh_group[0]->tangents_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         binormal_buffer, nvrhi::ResourceStates::VertexBuffer);
 
     current_copy_commandlist->beginTrackingBufferState(
         tangent_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
-        tangent_buffer, scene_world.mesh_group[0]->tangents_stream.data(),
-        sizeof(glm::vec2) * scene_world.mesh_group[0]->tangents_stream.size());
+        tangent_buffer, scene_world->mesh_group[0]->tangents_stream.data(),
+        sizeof(glm::vec2) * scene_world->mesh_group[0]->tangents_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         tangent_buffer, nvrhi::ResourceStates::VertexBuffer);
 
     current_copy_commandlist->beginTrackingBufferState(
         index_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
-        index_buffer, scene_world.mesh_group[0]->indices.data(),
-        sizeof(scene_world.mesh_group[0]->indices[0]) *
-            scene_world.mesh_group[0]->indices.size());
+        index_buffer, scene_world->mesh_group[0]->indices.data(),
+        sizeof(scene_world->mesh_group[0]->indices[0]) *
+            scene_world->mesh_group[0]->indices.size());
     current_copy_commandlist->setPermanentBufferState(
         index_buffer, nvrhi::ResourceStates::IndexBuffer);
 
@@ -304,7 +304,7 @@ void SimplePass::PreZ_Render(nvrhi::TextureHandle col_tex,
   current_command_list_graphics->setGraphicsState(state);
 
   auto drawArguments = nvrhi::DrawArguments().setVertexCount(
-      scene_world.mesh_group[0]->indices.size());
+      scene_world->mesh_group[0]->indices.size());
   current_command_list_graphics->drawIndexed(drawArguments);
 }
 
@@ -351,7 +351,7 @@ void SimplePass::Base_Render(nvrhi::TextureHandle col_tex,
   current_command_list_graphics->setGraphicsState(state);
 
   auto drawArguments = nvrhi::DrawArguments().setVertexCount(
-      scene_world.mesh_group[0]->indices.size());
+      scene_world->mesh_group[0]->indices.size());
   current_command_list_graphics->drawIndexed(drawArguments);
 }
 

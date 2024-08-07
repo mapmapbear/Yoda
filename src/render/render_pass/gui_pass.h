@@ -49,7 +49,7 @@ protected:
 
 class GUIPass {
 public:
-  GUIPass(std::shared_ptr<RHIContextD3D12> context, World& world);
+  GUIPass(std::shared_ptr<RHIContextD3D12> context, World *world);
   ~GUIPass();
   bool init();
   ImFont *load_font(const std::string &fontFile, float fontSize);
@@ -60,12 +60,12 @@ public:
   bool keybord_update(int key, int action);
   bool keybord_char_input(int code);
   void build_UI();
-  void set_world_scene(World &world);
+  void set_world_scene(World *world);
 
 protected:
   std::unique_ptr<GUIData> imgui_data;
   std::shared_ptr<RHIContextD3D12> m_context;
   ImFont *m_font = nullptr;
-  World scene_world;
+  World *scene_world;
 };
 } // namespace Yoda
