@@ -140,16 +140,19 @@ void GUIPass::update_renderdata(float delta_time) {
 // std::shared_ptr<Node> active_node;
 static int flag = ImGuiTreeNodeFlags_OpenOnArrow |
                   ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                  ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+                  ImGuiTreeNodeFlags_Leaf;
 static bool node_state = false;
 bool GUIPass::show_scene_node(std::shared_ptr<Node> node, int index,
                               bool state) {
   if (!node->child_nodes.empty()) {
-    if (ImGui::TreeNode((void *)(intptr_t)index, node->node_name.c_str(),
-                        index)) {
-      scene_world->active_node = node;
+    if (ImGui::TreeNodeEx((void *)(intptr_t)index, flag, "%s",
+                          node->node_name.c_str())) {
+      if (ImGui::IsItemClicked()) {
+        scene_world->active_node = node;
+        node_state = true;
+      }
       for (int j = 0; j < node->child_nodes.size(); ++j) {
-        show_scene_node(node->child_nodes.at(j), j);
+        show_scene_node(node->child_nodes.at(j), index + j);
       }
       ImGui::TreePop();
     }
@@ -161,9 +164,11 @@ bool GUIPass::show_scene_node(std::shared_ptr<Node> node, int index,
       scene_world->active_node = node;
       node_state = true;
     }
-
+    ImGui::TreePop();
     return false;
   }
+
+  return false;
 }
 void GUIPass::build_UI() {
   if (!node_state)
@@ -171,12 +176,15 @@ void GUIPass::build_UI() {
   ImGui::Begin("Node Tree");
   ImGui::BeginChild("Child1", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY,
                     ImGuiWindowFlags_AlwaysAutoResize);
-  if (ImGui::TreeNode("Scene Graph")) {
+  flag |= ImGuiTreeNodeFlags_DefaultOpen;
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  if (ImGui::TreeNode((void *)(intptr_t)0, "Scene Graph")) {
     for (int i = 0; i < scene_world->node_tree.size(); i++) {
-      show_scene_node(scene_world->node_tree[i], i);
+      show_scene_node(scene_world->node_tree[i], i + 1);
     }
-    ImGui::TreePop();
   }
+  ImGui::TreePop();
+
   ImGui::EndChild();
 
   ImGui::Separator();
@@ -184,14 +192,16 @@ void GUIPass::build_UI() {
   ImGui::BeginChild("Transform", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY,
                     ImGuiWindowFlags_AlwaysAutoResize);
   ImGui::SeparatorText("Position");
-  ImGui::DragFloat3("##1",
-                    glm::value_ptr(scene_world->active_node->m_local_transform.translation));
+  ImGui::DragFloat3(
+      "##1",
+      glm::value_ptr(scene_world->active_node->m_local_transform.translation));
   ImGui::SeparatorText("Rotation");
-  ImGui::DragFloat4("##2",
-                    glm::value_ptr(scene_world->active_node->m_local_transform.rotation));
+  ImGui::DragFloat4(
+      "##2",
+      glm::value_ptr(scene_world->active_node->m_local_transform.rotation));
   ImGui::SeparatorText("Scale");
-  ImGui::DragFloat3("##3",
-                    glm::value_ptr(scene_world->active_node->m_local_transform.scale));
+  ImGui::DragFloat3(
+      "##3", glm::value_ptr(scene_world->active_node->m_local_transform.scale));
 
   ImGui::EndChild();
 
