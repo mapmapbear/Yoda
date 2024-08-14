@@ -102,8 +102,8 @@ void SkyPass::Render(nvrhi::TextureHandle color_tex,
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
     nvrhi::DepthStencilState defaultSt = {};
     defaultSt.setDepthFunc(nvrhi::ComparisonFunc::GreaterOrEqual);
-    defaultSt.setDepthTestEnable(false);
-    defaultSt.setDepthWriteEnable(true);
+    defaultSt.setDepthTestEnable(true);
+    defaultSt.setDepthWriteEnable(false);
     psoDesc.renderState.depthStencilState = defaultSt;
     psoDesc.renderState.rasterState.depthClipEnable = true;
     psoDesc.addBindingLayout(binding_layout);
@@ -117,10 +117,6 @@ void SkyPass::Render(nvrhi::TextureHandle color_tex,
   state.viewport.addViewportAndScissorRect(
       framebuffer->getFramebufferInfo().getViewport());
   current_command_list_graphics->setGraphicsState(state);
-  nvrhi::utils::ClearColorAttachment(current_command_list_graphics, framebuffer,
-                                     0, nvrhi::Color(0.0f));
-  nvrhi::utils::ClearDepthStencilAttachment(current_command_list_graphics,
-                                            framebuffer, 0.0, 0.0);
   nvrhi::DrawArguments args;
   args.vertexCount = 3;
   current_command_list_graphics->draw(args);

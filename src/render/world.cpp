@@ -6,12 +6,18 @@
 #include "mesh.h"
 #include "render/node.h"
 #include "render/world.h"
+#include <glm/gtc/type_ptr.hpp>
 #include <memory>
 #include <string>
 #include <ufbx.h>
 
 #include <stb_image.h>
 #include <unordered_map>
+
+#include <assimp/cimport.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <assimp/version.h>
 
 namespace Yoda {
 
@@ -21,13 +27,13 @@ bool parse_mesh(ufbx_scene *scene, World &world) {
   for (ufbx_node *node : scene->nodes) {
     if (node->is_root)
       continue;
-
     printf("Object: %s\n", node->name.data);
     if (node->mesh) {
       ufbx_mesh *mesh = node->mesh;
       Mesh mesh_node;
       if (mesh)
         mesh_node.mesh_name = std::string(node->name.data, node->name.length);
+      uint32_t vertex_offset = 0;
       for (const ufbx_mesh_part &fbx_mesh_part : mesh->material_parts) {
         uint32_t num_indices = fbx_mesh_part.num_triangles * 3;
         std::vector<uint32_t> tri_indices(mesh->max_face_triangles * 3);
@@ -38,29 +44,24 @@ bool parse_mesh(ufbx_scene *scene, World &world) {
               tri_indices.data(), tri_indices.size(), mesh, face);
           for (size_t i = 0; i < num_triangles * 3; i++) {
             const uint32_t index = tri_indices[i];
-            const uint32_t vertex = mesh->vertex_indices[index];
-
             ufbx_vec3 u_position = mesh->vertex_position[index];
             ufbx_vec3 u_normal = mesh->vertex_normal[index];
             ufbx_vec2 u_uv = mesh->vertex_uv[index];
             glm::vec4 color = glm::vec4(1.0f);
             glm::vec4 tangent = glm::vec4(1.0f);
             if (mesh->vertex_tangent.exists) {
-              tangent = glm::vec4(mesh->vertex_tangent[index].x,
-                                  mesh->vertex_tangent[index].y,
-                                  mesh->vertex_tangent[index].z, 1.0f);
+              tangent =
+                  glm::vec4(glm::make_vec3(mesh->vertex_tangent[index].v), 1.0);
             }
-
             if (mesh->vertex_color.exists) {
-              color = glm::vec4(
-                  mesh->vertex_color[index].x, mesh->vertex_color[index].y,
-                  mesh->vertex_color[index].z, mesh->vertex_color[index].w);
+              color = glm::make_vec4(mesh->vertex_color[index].v);
             }
 
-            glm::vec3 position =
-                glm::vec3(u_position.x, u_position.y, u_position.z);
-            glm::vec3 normal = glm::vec3(u_normal.x, u_normal.y, u_normal.z);
-            glm::vec2 uv = glm::vec2(u_uv.x, u_uv.y);
+            glm::vec3 position = glm::make_vec3(mesh->vertex_position[index].v);
+            glm::vec3 normal = glm::make_vec3(mesh->vertex_normal[index].v);
+            glm::vec2 uv = glm::make_vec2(mesh->vertex_uv[index].v);
+            uv.y = 1.0 - uv.y;
+            // glm::vec2 uv = glm::vec2(u_uv.x, 1.0 - u_uv.y);
 
             mesh_node.positions_stream.emplace_back(position);
             mesh_node.normals_stream.emplace_back(normal);
@@ -69,7 +70,6 @@ bool parse_mesh(ufbx_scene *scene, World &world) {
             mesh_node.colors_stream.emplace_back(color);
           }
         }
-        mesh_node.indices.resize(num_indices);
         std::vector<ufbx_vertex_stream> streams;
         if (!mesh_node.positions_stream.empty()) {
           streams.push_back({mesh_node.positions_stream.data(),
@@ -96,14 +96,178 @@ bool parse_mesh(ufbx_scene *scene, World &world) {
                              mesh_node.tangents_stream.size(),
                              sizeof(mesh_node.tangents_stream[0])});
         }
+        std::vector<uint32_t> indices;
+        indices.resize(num_indices);
         const size_t num_vertices = ufbx_generate_indices(
-            streams.data(), streams.size(), mesh_node.indices.data(),
-            mesh_node.indices.size(), nullptr, nullptr);
+            streams.data(), streams.size(), indices.data(), indices.size(),
+            nullptr, nullptr);
+        mesh_node.indices.clear();
+        for (uint32_t index : indices) {
+          mesh_node.indices.push_back(vertex_offset + index);
+        }
+        vertex_offset += (uint32_t)num_vertices;
         std::shared_ptr<Mesh> mesh_ptr = std::make_shared<Mesh>(mesh_node);
         world.mesh_map.insert({mesh_node.mesh_name, mesh_ptr});
         meshes.emplace_back(mesh_ptr);
       }
     }
+  }
+  return true;
+}
+
+bool parse_mesh1(ufbx_scene *scene, World &world) {
+  std::vector<std::shared_ptr<Mesh>> &meshes = world.mesh_group;
+  // Let's just list all objects within the scene for example:
+  for (ufbx_node *node : scene->nodes) {
+    if (node->is_root)
+      continue;
+    printf("Object: %s\n", node->name.data);
+    if (node->mesh) {
+      ufbx_mesh *mesh = node->mesh;
+      Mesh mesh_node;
+      if (mesh)
+        mesh_node.mesh_name = std::string(node->name.data, node->name.length);
+      std::vector<uint32_t> tri_indices;
+      tri_indices.resize(mesh->max_face_triangles * 3);
+      for (const ufbx_mesh_part &fbx_mesh_part : mesh->material_parts) {
+        // Iterate over each face using the specific material.
+        for (uint32_t face_index : fbx_mesh_part.face_indices) {
+          ufbx_face face = mesh->faces[face_index];
+
+          // Triangulate the face into `tri_indices[]`.
+          uint32_t num_triangles = ufbx_triangulate_face(
+              tri_indices.data(), tri_indices.size(), mesh, face);
+
+          // Iterate over each triangle corner contiguously.
+          for (size_t i = 0; i < num_triangles * 3; i++) {
+            const uint32_t index = tri_indices[i];
+            ufbx_vec3 u_position = mesh->vertex_position[index];
+            ufbx_vec3 u_normal = mesh->vertex_normal[index];
+            ufbx_vec2 u_uv = mesh->vertex_uv[index];
+            glm::vec4 color = glm::vec4(1.0f);
+            glm::vec4 tangent = glm::vec4(1.0f);
+            if (mesh->vertex_tangent.exists) {
+              tangent =
+                  glm::vec4(glm::make_vec3(mesh->vertex_tangent[index].v), 1.0);
+            }
+            if (mesh->vertex_color.exists) {
+              color = glm::make_vec4(mesh->vertex_color[index].v);
+            }
+
+            glm::vec3 position = glm::make_vec3(mesh->vertex_position[index].v);
+            glm::vec3 normal = glm::make_vec3(mesh->vertex_normal[index].v);
+            glm::vec2 uv = glm::make_vec2(mesh->vertex_uv[index].v);
+            uv.y = 1.0 - uv.y;
+            // glm::vec2 uv = glm::vec2(u_uv.x, 1.0 - u_uv.y);
+
+            mesh_node.positions_stream.emplace_back(position);
+            mesh_node.normals_stream.emplace_back(normal);
+            mesh_node.tangents_stream.emplace_back(tangent);
+            mesh_node.UVs_stream.emplace_back(uv);
+            mesh_node.colors_stream.emplace_back(color);
+          }
+        }
+        assert(mesh_node.positions_stream.size() ==
+               fbx_mesh_part.num_triangles * 3);
+        ufbx_vertex_stream streams[1] = {
+            {mesh_node.positions_stream.data(),
+             mesh_node.positions_stream.size(),
+             sizeof(mesh_node.positions_stream[0])},
+        };
+
+        mesh_node.indices.resize(fbx_mesh_part.num_triangles * 3);
+        size_t num_vertices =
+            ufbx_generate_indices(streams, 1, mesh_node.indices.data(),
+                                  mesh_node.indices.size(), nullptr, nullptr);
+        // mesh_node.positions_stream.resize(num_vertices);
+
+        std::shared_ptr<Mesh> mesh_ptr = std::make_shared<Mesh>(mesh_node);
+        world.mesh_map.insert({mesh_node.mesh_name, mesh_ptr});
+        meshes.push_back(mesh_ptr);
+      }
+    }
+  }
+  return true;
+}
+
+bool parse_mesh2(ufbx_scene *scene, World &world) {
+  std::vector<std::shared_ptr<Mesh>> &meshes = world.mesh_group;
+  const aiScene *aiscene = aiImportFile(
+      "module/cube.fbx", aiProcess_ConvertToLeftHanded | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+
+  if (!aiscene || !aiscene->HasMeshes()) {
+    printf("Unable to load data/rubber_duck/scene.gltf\n");
+    exit(255);
+  }
+  // for (size_t i = 0; i < aiscene->mNumMeshes; ++i) {
+  //   const aiMesh *mesh = aiscene->mMeshes[i];
+  //   Mesh mesh_node;
+  //   mesh_node.indices.resize(mesh->mNumFaces * 3);
+  //   for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+  //     const aiFace &face = mesh->mFaces[i];
+  //     const unsigned int idx[3] = {face.mIndices[0], face.mIndices[1],
+  //                                  face.mIndices[2]};
+  //     mesh_node.indices[i * 3] = face.mIndices[0];
+  //     mesh_node.indices[i * 3 + 1] = face.mIndices[1];
+  //     mesh_node.indices[i * 3 + 2] = face.mIndices[2];
+  //     for (int j = 0; j != 3; j++) {
+  //       const aiVector3D v = mesh->mVertices[j];
+  //       mesh_node.positions_stream.push_back(glm::vec3(v.x, v.z, v.y));
+  //       mesh_node.normals_stream.push_back(glm::vec3(mesh->mNormals[idx[j]].x,
+  //                                                    mesh->mNormals[idx[j]].y,
+  //                                                    mesh->mNormals[idx[j]].z));
+  //       mesh_node.UVs_stream.push_back(
+  //           glm::vec2(mesh->mTextureCoords[0][idx[j]].x,
+  //                     mesh->mTextureCoords[0][idx[j]].y));
+
+  //       mesh_node.colors_stream.push_back(glm::vec4(1.0));
+  //       mesh_node.tangents_stream.push_back(glm::vec4(1.0));
+  //     }
+  //   }
+  //   std::shared_ptr<Mesh> mesh_ptr = std::make_shared<Mesh>(mesh_node);
+  //   world.mesh_map.insert({mesh_node.mesh_name, mesh_ptr});
+  //   meshes.push_back(mesh_ptr);
+  // }
+  for (uint32_t i = 0; i < aiscene->mNumMeshes; ++i) {
+    auto mesh = aiscene->mMeshes[i];
+    Mesh mesh_node;
+    uint32_t numVertices = mesh->mNumVertices;
+    if (mesh->mNumVertices > 0) {
+      for (size_t j = 0; j < numVertices; ++j) {
+
+        glm::vec3 normal = glm::vec3(1.0);
+        glm::vec4 tangent = glm::vec4(1.0);
+        glm::vec4 vertex_color = glm::vec4(1.0);
+        if (mesh->HasNormals()) {
+          normal = glm::vec3(mesh->mNormals[j].x, mesh->mNormals[j].y,
+                             mesh->mNormals[j].z);
+        }
+        if (mesh->HasTangentsAndBitangents()) {
+          tangent = glm::vec4(mesh->mTangents[j].x, mesh->mTangents[j].y,
+                              mesh->mTangents[j].z, 1.0);
+        }
+        mesh_node.positions_stream.push_back(glm::vec3(
+            mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z));
+        mesh_node.UVs_stream.push_back(glm::vec2(mesh->mTextureCoords[0][j].x,
+                                                 mesh->mTextureCoords[0][j].y));
+        mesh_node.normals_stream.push_back(normal);
+        mesh_node.tangents_stream.push_back(tangent);
+        mesh_node.colors_stream.push_back(vertex_color);
+      }
+    }
+    uint32_t numFaces = mesh->mNumFaces;
+    uint32_t numIndices = numFaces * 3;
+    mesh_node.indices.resize(numIndices);
+    if (numFaces > 0) {
+      for (size_t i = 0; i < numFaces; ++i) {
+        mesh_node.indices[i * 3] = mesh->mFaces[i].mIndices[0];
+        mesh_node.indices[i * 3 + 1] = mesh->mFaces[i].mIndices[1];
+        mesh_node.indices[i * 3 + 2] = mesh->mFaces[i].mIndices[2];
+      }
+    }
+    std::shared_ptr<Mesh> mesh_ptr = std::make_shared<Mesh>(mesh_node);
+    world.mesh_map.insert({mesh_node.mesh_name, mesh_ptr});
+    meshes.push_back(mesh_ptr);
   }
   return true;
 }
@@ -265,7 +429,7 @@ bool World::load_scene2(std::string &path, World &world) {
     fprintf(stderr, "Failed to load: %s\n", error.description.data);
     exit(1);
   }
-  parse_mesh(scene, world);
+  parse_mesh2(scene, world);
   parse_material(scene, world);
   parse_scene_node(scene, world);
   ufbx_free_scene(scene);

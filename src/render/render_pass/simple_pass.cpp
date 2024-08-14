@@ -10,12 +10,11 @@
 #include <nvrhi/utils.h>
 #include <vector>
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 namespace Yoda {
-SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World* wolrd) {
+SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
   render_contex = context;
   scene_world = wolrd;
   ShaderByteCode vs_byte_code;
@@ -197,7 +196,8 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
         vertex_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
         vertex_buffer, scene_world->mesh_group[0]->positions_stream.data(),
-        sizeof(glm::vec3) * scene_world->mesh_group[0]->positions_stream.size());
+        sizeof(glm::vec3) *
+            scene_world->mesh_group[0]->positions_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         vertex_buffer, nvrhi::ResourceStates::VertexBuffer);
 
@@ -253,7 +253,8 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
     // TODO:
     glm::quat rotationX =
         glm::angleAxis(glm::radians(35.0f), glm::vec3(0.0, 1.0, 0.0));
-    glm::mat4 invViewProj = camera.view_proj * glm::mat4_cast(rotationX);
+    // glm::mat4 invViewProj = camera.view_proj * glm::mat4_cast(rotationX);
+    glm::mat4 invViewProj = camera.view_proj;
     current_copy_commandlist->writeBuffer(constant_buffer, &invViewProj,
                                           sizeof(float) * 16);
   }
@@ -271,7 +272,8 @@ void SimplePass::PreZ_Render(nvrhi::TextureHandle col_tex,
         nvrhi::ComparisonFunc::GreaterOrEqual;
     render_state.depthStencilState.depthWriteEnable = true;
     render_state.rasterState.depthClipEnable = true;
-    render_state.rasterState.frontCounterClockwise = true;
+    render_state.rasterState.frontCounterClockwise = false;
+    render_state.rasterState.cullMode = nvrhi::RasterCullMode::Back;
     nvrhi::GraphicsPipelineDesc desc;
     desc.VS = vs_shader;
     // desc.PS = nullptr; // do not need PS Shader
@@ -302,6 +304,10 @@ void SimplePass::PreZ_Render(nvrhi::TextureHandle col_tex,
   state.viewport.addViewportAndScissorRect(
       preZ_framebuffer->getFramebufferInfo().getViewport());
   current_command_list_graphics->setGraphicsState(state);
+  nvrhi::utils::ClearColorAttachment(current_command_list_graphics, preZ_framebuffer,
+                                     0, nvrhi::Color(0.0f));
+  nvrhi::utils::ClearDepthStencilAttachment(current_command_list_graphics,
+                                            preZ_framebuffer, 0.0, 0.0);
 
   auto drawArguments = nvrhi::DrawArguments().setVertexCount(
       scene_world->mesh_group[0]->indices.size());
@@ -317,9 +323,10 @@ void SimplePass::Base_Render(nvrhi::TextureHandle col_tex,
     nvrhi::RenderState render_state;
     render_state.depthStencilState.depthTestEnable = true;
     render_state.depthStencilState.depthFunc = nvrhi::ComparisonFunc::Equal;
-    render_state.depthStencilState.depthWriteEnable = false;
+    render_state.depthStencilState.depthWriteEnable = true;
     render_state.rasterState.depthClipEnable = true;
-    render_state.rasterState.frontCounterClockwise = true;
+    render_state.rasterState.cullMode = nvrhi::RasterCullMode::Back;
+    render_state.rasterState.frontCounterClockwise = false;
     nvrhi::GraphicsPipelineDesc desc;
     desc.VS = vs_shader;
     desc.PS = ps_shader;
