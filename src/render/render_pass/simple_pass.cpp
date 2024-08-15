@@ -6,6 +6,7 @@
 #include "render/world.h"
 #include "rhi/d3d12/rhi_context_d3d12.h"
 #include "rhi/rhi_context_commons.h"
+#include <cmath>
 #include <glm/gtc/quaternion.hpp>
 #include <nvrhi/utils.h>
 #include <vector>
@@ -272,7 +273,7 @@ void SimplePass::PreZ_Render(nvrhi::TextureHandle col_tex,
         nvrhi::ComparisonFunc::GreaterOrEqual;
     render_state.depthStencilState.depthWriteEnable = true;
     render_state.rasterState.depthClipEnable = true;
-    render_state.rasterState.frontCounterClockwise = false;
+    // render_state.rasterState.frontCounterClockwise = true;
     render_state.rasterState.cullMode = nvrhi::RasterCullMode::Back;
     nvrhi::GraphicsPipelineDesc desc;
     desc.VS = vs_shader;
@@ -304,8 +305,8 @@ void SimplePass::PreZ_Render(nvrhi::TextureHandle col_tex,
   state.viewport.addViewportAndScissorRect(
       preZ_framebuffer->getFramebufferInfo().getViewport());
   current_command_list_graphics->setGraphicsState(state);
-  nvrhi::utils::ClearColorAttachment(current_command_list_graphics, preZ_framebuffer,
-                                     0, nvrhi::Color(0.0f));
+  nvrhi::utils::ClearColorAttachment(current_command_list_graphics,
+                                     preZ_framebuffer, 0, nvrhi::Color(0.0f));
   nvrhi::utils::ClearDepthStencilAttachment(current_command_list_graphics,
                                             preZ_framebuffer, 0.0, 0.0);
 
@@ -325,8 +326,8 @@ void SimplePass::Base_Render(nvrhi::TextureHandle col_tex,
     render_state.depthStencilState.depthFunc = nvrhi::ComparisonFunc::Equal;
     render_state.depthStencilState.depthWriteEnable = true;
     render_state.rasterState.depthClipEnable = true;
+    // render_state.rasterState.frontCounterClockwise = true;
     render_state.rasterState.cullMode = nvrhi::RasterCullMode::Back;
-    render_state.rasterState.frontCounterClockwise = false;
     nvrhi::GraphicsPipelineDesc desc;
     desc.VS = vs_shader;
     desc.PS = ps_shader;
@@ -371,11 +372,14 @@ void SimplePass::Render(nvrhi::TextureHandle col_tex,
 void SimplePass::Resize(nvrhi::TextureHandle col_tex,
                         nvrhi::TextureHandle depth_tex) {
   framebuffer = nullptr;
+  preZ_framebuffer = nullptr;
   nvrhi::DeviceHandle devicePtr = render_contex->nvrhi_device;
   auto framebufferDesc =
       nvrhi::FramebufferDesc().addColorAttachment(col_tex).setDepthAttachment(
           depth_tex);
+  auto desc = col_tex->getDesc();
   framebuffer = devicePtr->createFramebuffer(framebufferDesc);
+  preZ_framebuffer = devicePtr->createFramebuffer(framebufferDesc);
 }
 
 } // namespace Yoda

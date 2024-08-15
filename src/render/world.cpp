@@ -193,41 +193,12 @@ bool parse_mesh1(ufbx_scene *scene, World &world) {
 bool parse_mesh2(ufbx_scene *scene, World &world) {
   std::vector<std::shared_ptr<Mesh>> &meshes = world.mesh_group;
   const aiScene *aiscene = aiImportFile(
-      "module/cube.fbx", aiProcess_ConvertToLeftHanded | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+      "module/pighead.fbx", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 
   if (!aiscene || !aiscene->HasMeshes()) {
     printf("Unable to load data/rubber_duck/scene.gltf\n");
     exit(255);
   }
-  // for (size_t i = 0; i < aiscene->mNumMeshes; ++i) {
-  //   const aiMesh *mesh = aiscene->mMeshes[i];
-  //   Mesh mesh_node;
-  //   mesh_node.indices.resize(mesh->mNumFaces * 3);
-  //   for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-  //     const aiFace &face = mesh->mFaces[i];
-  //     const unsigned int idx[3] = {face.mIndices[0], face.mIndices[1],
-  //                                  face.mIndices[2]};
-  //     mesh_node.indices[i * 3] = face.mIndices[0];
-  //     mesh_node.indices[i * 3 + 1] = face.mIndices[1];
-  //     mesh_node.indices[i * 3 + 2] = face.mIndices[2];
-  //     for (int j = 0; j != 3; j++) {
-  //       const aiVector3D v = mesh->mVertices[j];
-  //       mesh_node.positions_stream.push_back(glm::vec3(v.x, v.z, v.y));
-  //       mesh_node.normals_stream.push_back(glm::vec3(mesh->mNormals[idx[j]].x,
-  //                                                    mesh->mNormals[idx[j]].y,
-  //                                                    mesh->mNormals[idx[j]].z));
-  //       mesh_node.UVs_stream.push_back(
-  //           glm::vec2(mesh->mTextureCoords[0][idx[j]].x,
-  //                     mesh->mTextureCoords[0][idx[j]].y));
-
-  //       mesh_node.colors_stream.push_back(glm::vec4(1.0));
-  //       mesh_node.tangents_stream.push_back(glm::vec4(1.0));
-  //     }
-  //   }
-  //   std::shared_ptr<Mesh> mesh_ptr = std::make_shared<Mesh>(mesh_node);
-  //   world.mesh_map.insert({mesh_node.mesh_name, mesh_ptr});
-  //   meshes.push_back(mesh_ptr);
-  // }
   for (uint32_t i = 0; i < aiscene->mNumMeshes; ++i) {
     auto mesh = aiscene->mMeshes[i];
     Mesh mesh_node;

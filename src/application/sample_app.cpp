@@ -34,7 +34,7 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     m_render_context = std::make_shared<RHIContextD3D12>();
     m_render_context->initialize(m_window->getApiHandle());
 
-    std::string test_scene_path = "module/cube.fbx";
+    std::string test_scene_path = "module/sphere.fbx";
     //std::string test_scene_path1 = "module/bistro/BistroExterior.fbx";
     bool state = World::load_scene2(test_scene_path, scene_world);
     state = World::load_scene1(test_scene_path, scene_world);
