@@ -30,6 +30,8 @@ static const float3 g_colors[] = {
 };
 
 Texture2D t_Texture : register(t0);
+Texture2DArray t_irradiacneTextArray : register(t1);
+Texture2DArray t_specularTextArray : register(t2);
 SamplerState s_MaterialSampler : register(s0);
 
 VertexOut main_vs(
@@ -46,5 +48,7 @@ VertexOut main_vs(
 float4 main_ps(VertexOut pin) : SV_Target
 {
     float4 o_color = t_Texture.Sample(s_MaterialSampler, pin.uv);
+	o_color += t_irradiacneTextArray.Sample(s_MaterialSampler, float3(pin.uv, 0.0)) * 0.2;
+	o_color += t_specularTextArray.Sample(s_MaterialSampler, float3(pin.uv, 0.0)) * 0.2;
     return o_color;
 }

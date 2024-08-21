@@ -9,7 +9,7 @@ class FlyCamera;
 
 class SimplePass {
 public:
-  SimplePass(std::shared_ptr<RHIContextD3D12> context, World* wolrd);
+  SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd);
   ~SimplePass();
   void Render(nvrhi::TextureHandle col_tex, nvrhi::TextureHandle depth_tex);
   void PreZ_Render(nvrhi::TextureHandle col_tex,
@@ -43,8 +43,16 @@ protected:
   nvrhi::TextureDesc aldebo_desc;
   unsigned char *albedo_raw_data = nullptr;
 
+  nvrhi::TextureDesc irradiance_desc;
+  nvrhi::TextureHandle irradiance_texture;
+  std::vector<unsigned char *> irradiance_raw_data;
+
+  nvrhi::TextureDesc specular_desc;
+  nvrhi::TextureHandle specular_texture;
+  std::vector<unsigned char *> specular_raw_data;
+
 protected:
-  World* scene_world;
+  World *scene_world;
 
   std::shared_ptr<RHIContextD3D12> render_contex;
   bool is_pre_frame = true;

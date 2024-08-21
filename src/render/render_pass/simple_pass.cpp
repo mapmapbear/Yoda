@@ -33,6 +33,35 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
   int x, y, n;
   albedo_raw_data = stbi_load("textures/test.png", &x, &y, &n, 4);
 
+  int ix, iy, in;
+  irradiance_raw_data.resize(6);
+  irradiance_raw_data[0] =
+      stbi_load("textures/IBL/irradiance/posX.tga", &ix, &iy, &in, 4);
+  irradiance_raw_data[1] =
+      stbi_load("textures/IBL/irradiance/negX.tga", &ix, &iy, &in, 4);
+  irradiance_raw_data[2] =
+      stbi_load("textures/IBL/irradiance/posY.tga", &ix, &iy, &in, 4);
+  irradiance_raw_data[3] =
+      stbi_load("textures/IBL/irradiance/negY.tga", &ix, &iy, &in, 4);
+  irradiance_raw_data[4] =
+      stbi_load("textures/IBL/irradiance/posZ.tga", &ix, &iy, &in, 4);
+  irradiance_raw_data[5] =
+      stbi_load("textures/IBL/irradiance/negZ.tga", &ix, &iy, &in, 4);
+
+  specular_raw_data.resize(6);
+  specular_raw_data[0] =
+      stbi_load("textures/IBL/specular/posX.tga", &ix, &iy, &in, 4);
+  specular_raw_data[1] =
+      stbi_load("textures/IBL/specular/negX.tga", &ix, &iy, &in, 4);
+  specular_raw_data[2] =
+      stbi_load("textures/IBL/specular/posY.tga", &ix, &iy, &in, 4);
+  specular_raw_data[3] =
+      stbi_load("textures/IBL/specular/negY.tga", &ix, &iy, &in, 4);
+  specular_raw_data[4] =
+      stbi_load("textures/IBL/specular/posZ.tga", &ix, &iy, &in, 4);
+  specular_raw_data[5] =
+      stbi_load("textures/IBL/specular/negZ.tga", &ix, &iy, &in, 4);
+
   nvrhi::VertexAttributeDesc attributes[] = {
       nvrhi::VertexAttributeDesc()
           .setName("POSITION")
@@ -79,6 +108,39 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
                     .setKeepInitialState(true)
                     .setDebugName("Albedo Texture");
   albedo_texute = device->createTexture(aldebo_desc);
+
+  irradiance_desc = nvrhi::TextureDesc()
+                        .setArraySize(6)
+                        .setDimension(nvrhi::TextureDimension::Texture2DArray)
+                        .setWidth(32)
+                        .setHeight(32)
+                        .setFormat(nvrhi::Format::RGBA8_UNORM)
+                        .setInitialState(nvrhi::ResourceStates::ShaderResource)
+                        .setKeepInitialState(true)
+                        .setDebugName("irradianceMap");
+  irradiance_texture = device->createTexture(irradiance_desc);
+
+  irradiance_desc = nvrhi::TextureDesc()
+                        .setArraySize(6)
+                        .setDimension(nvrhi::TextureDimension::Texture2DArray)
+                        .setWidth(32)
+                        .setHeight(32)
+                        .setFormat(nvrhi::Format::RGBA8_UNORM)
+                        .setInitialState(nvrhi::ResourceStates::ShaderResource)
+                        .setKeepInitialState(true)
+                        .setDebugName("irradianceEnvMap");
+  irradiance_texture = device->createTexture(irradiance_desc);
+
+  specular_desc = nvrhi::TextureDesc()
+                      .setArraySize(6)
+                      .setDimension(nvrhi::TextureDimension::Texture2DArray)
+                      .setWidth(128)
+                      .setHeight(128)
+                      .setFormat(nvrhi::Format::RGBA8_UNORM)
+                      .setInitialState(nvrhi::ResourceStates::ShaderResource)
+                      .setKeepInitialState(true)
+                      .setDebugName("specularEnvMap");
+  specular_texture = device->createTexture(specular_desc);
 
   // Create Vertex Buffer
   nvrhi::BufferDesc vertexBufferDesc;
@@ -138,6 +200,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
                         .setVisibility(nvrhi::ShaderType::All)
                         .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(0))
                         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
+                        .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
+                        .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2))
                         .addItem(nvrhi::BindingLayoutItem::Sampler(0));
 
   binding_layout = device->createBindingLayout(layoutDesc);
@@ -162,6 +226,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
           .addItem(nvrhi::BindingSetItem::ConstantBuffer(0, constant_buffer))
           .addItem(nvrhi::BindingSetItem::Texture_SRV(
               0, albedo_texute)) // texture at t0
+          .addItem(nvrhi::BindingSetItem::Texture_SRV(1, irradiance_texture))
+          .addItem(nvrhi::BindingSetItem::Texture_SRV(2, specular_texture))
           .addItem(nvrhi::BindingSetItem::Sampler(0, repeat_sampler));
 
   binding_set = device->createBindingSet(bindingSetDesc, binding_layout);
@@ -243,11 +309,28 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
     current_copy_commandlist->setPermanentBufferState(
         index_buffer, nvrhi::ResourceStates::IndexBuffer);
 
-    const size_t textureRowPitch = aldebo_desc.width * 4;
+    size_t textureRowPitch = aldebo_desc.width * 4;
     current_copy_commandlist->writeTexture(albedo_texute,
                                            /* arraySlice = */ 0,
                                            /* mipLevel = */ 0, albedo_raw_data,
                                            textureRowPitch);
+
+    textureRowPitch = irradiance_desc.width * 4;
+    for (size_t i = 0; i < 6; ++i) {
+      current_copy_commandlist->writeTexture(
+          irradiance_texture,
+          /* arraySlice = */ i,
+          /* mipLevel = */ 0, irradiance_raw_data[i], textureRowPitch);
+    }
+
+    textureRowPitch = specular_desc.width * 4;
+    for (size_t i = 0; i < 6; ++i) {
+      current_copy_commandlist->writeTexture(
+          specular_texture,
+          /* arraySlice = */ i,
+          /* mipLevel = */ 0, specular_raw_data[i], textureRowPitch);
+    }
+
     is_start_frame = false;
   }
   if (is_pre_frame) {
