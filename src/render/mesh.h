@@ -14,7 +14,7 @@ public:
 public:
   std::vector<glm::vec3> positions_stream;
   std::vector<glm::vec3> normals_stream;
-  std::vector<glm::vec4> tangents_stream;
+  std::vector<glm::vec3> tangents_stream;
   std::vector<glm::vec2> UVs_stream;
   std::vector<glm::vec4> colors_stream;
   std::vector<uint32_t> indices;

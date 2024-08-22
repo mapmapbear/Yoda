@@ -31,7 +31,13 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
   ps_shader = context->shader_create_from_bytecode(ps_byte_code.m_type,
                                                    ps_byte_code.m_byte_code);
   int x, y, n;
-  albedo_raw_data = stbi_load("textures/test.png", &x, &y, &n, 4);
+  albedo_raw_data = stbi_load("textures/gray.png", &x, &y, &n, 4);
+  //albedo_raw_data = stbi_load("textures/lemon/lemon_diff_4k.tga", &x, &y, &n, 4);
+  int nx, ny, nz;
+  normal_raw_data =
+      stbi_load("textures/lemon/lemon_nor_dx_4k.tga", &nx, &ny, &nz, 4);
+  int rx, ry, rz;
+  RMO_raw_data = stbi_load("textures/lemon/lemon_RMO_4k.tga", &rx, &ry, &rz, 4);
 
   int ix, iy, in;
   irradiance_raw_data.resize(6);
@@ -103,11 +109,31 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
                     .setDimension(nvrhi::TextureDimension::Texture2D)
                     .setWidth(x)
                     .setHeight(y)
-                    .setFormat(nvrhi::Format::RGBA8_UNORM)
+                    .setFormat(nvrhi::Format::SRGBA8_UNORM)
                     .setInitialState(nvrhi::ResourceStates::ShaderResource)
                     .setKeepInitialState(true)
                     .setDebugName("Albedo Texture");
-  albedo_texute = device->createTexture(aldebo_desc);
+  albedo_texture = device->createTexture(aldebo_desc);
+
+  normal_desc = nvrhi::TextureDesc()
+                    .setDimension(nvrhi::TextureDimension::Texture2D)
+                    .setWidth(nx)
+                    .setHeight(ny)
+                    .setFormat(nvrhi::Format::RGBA8_UNORM)
+                    .setInitialState(nvrhi::ResourceStates::ShaderResource)
+                    .setKeepInitialState(true)
+                    .setDebugName("Normal Texture");
+  normal_texture = device->createTexture(normal_desc);
+
+  RMO_desc = nvrhi::TextureDesc()
+                 .setDimension(nvrhi::TextureDimension::Texture2D)
+                 .setWidth(rx)
+                 .setHeight(ry)
+                 .setFormat(nvrhi::Format::RGBA8_UNORM)
+                 .setInitialState(nvrhi::ResourceStates::ShaderResource)
+                 .setKeepInitialState(true)
+                 .setDebugName("RMO Texture");
+  RMO_texture = device->createTexture(RMO_desc);
 
   irradiance_desc = nvrhi::TextureDesc()
                         .setArraySize(6)
@@ -202,6 +228,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
                         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
                         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
                         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2))
+                        .addItem(nvrhi::BindingLayoutItem::Texture_SRV(3))
+                        .addItem(nvrhi::BindingLayoutItem::Texture_SRV(4))
                         .addItem(nvrhi::BindingLayoutItem::Sampler(0));
 
   binding_layout = device->createBindingLayout(layoutDesc);
@@ -225,9 +253,11 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
       nvrhi::BindingSetDesc()
           .addItem(nvrhi::BindingSetItem::ConstantBuffer(0, constant_buffer))
           .addItem(nvrhi::BindingSetItem::Texture_SRV(
-              0, albedo_texute)) // texture at t0
-          .addItem(nvrhi::BindingSetItem::Texture_SRV(1, irradiance_texture))
-          .addItem(nvrhi::BindingSetItem::Texture_SRV(2, specular_texture))
+              0, albedo_texture)) // texture at t0
+          .addItem(nvrhi::BindingSetItem::Texture_SRV(1, normal_texture))
+          .addItem(nvrhi::BindingSetItem::Texture_SRV(2, RMO_texture))
+          .addItem(nvrhi::BindingSetItem::Texture_SRV(3, irradiance_texture))
+          .addItem(nvrhi::BindingSetItem::Texture_SRV(4, specular_texture))
           .addItem(nvrhi::BindingSetItem::Sampler(0, repeat_sampler));
 
   binding_set = device->createBindingSet(bindingSetDesc, binding_layout);
@@ -280,7 +310,7 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
         normal_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
         normal_buffer, scene_world->mesh_group[0]->normals_stream.data(),
-        sizeof(glm::vec2) * scene_world->mesh_group[0]->normals_stream.size());
+        sizeof(glm::vec3) * scene_world->mesh_group[0]->normals_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         normal_buffer, nvrhi::ResourceStates::VertexBuffer);
 
@@ -288,7 +318,7 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
         binormal_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
         binormal_buffer, scene_world->mesh_group[0]->tangents_stream.data(),
-        sizeof(glm::vec2) * scene_world->mesh_group[0]->tangents_stream.size());
+        sizeof(glm::vec3) * scene_world->mesh_group[0]->tangents_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         binormal_buffer, nvrhi::ResourceStates::VertexBuffer);
 
@@ -296,7 +326,7 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
         tangent_buffer, nvrhi::ResourceStates::CopyDest);
     current_copy_commandlist->writeBuffer(
         tangent_buffer, scene_world->mesh_group[0]->tangents_stream.data(),
-        sizeof(glm::vec2) * scene_world->mesh_group[0]->tangents_stream.size());
+        sizeof(glm::vec3) * scene_world->mesh_group[0]->tangents_stream.size());
     current_copy_commandlist->setPermanentBufferState(
         tangent_buffer, nvrhi::ResourceStates::VertexBuffer);
 
@@ -310,9 +340,21 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
         index_buffer, nvrhi::ResourceStates::IndexBuffer);
 
     size_t textureRowPitch = aldebo_desc.width * 4;
-    current_copy_commandlist->writeTexture(albedo_texute,
+    current_copy_commandlist->writeTexture(albedo_texture,
                                            /* arraySlice = */ 0,
                                            /* mipLevel = */ 0, albedo_raw_data,
+                                           textureRowPitch);
+
+    textureRowPitch = normal_desc.width * 4;
+    current_copy_commandlist->writeTexture(normal_texture,
+                                           /* arraySlice = */ 0,
+                                           /* mipLevel = */ 0, normal_raw_data,
+                                           textureRowPitch);
+
+    textureRowPitch = RMO_desc.width * 4;
+    current_copy_commandlist->writeTexture(RMO_texture,
+                                           /* arraySlice = */ 0,
+                                           /* mipLevel = */ 0, RMO_raw_data,
                                            textureRowPitch);
 
     textureRowPitch = irradiance_desc.width * 4;
@@ -339,8 +381,12 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
         glm::angleAxis(glm::radians(35.0f), glm::vec3(0.0, 1.0, 0.0));
     // glm::mat4 invViewProj = camera.view_proj * glm::mat4_cast(rotationX);
     glm::mat4 invViewProj = camera.view_proj;
-    current_copy_commandlist->writeBuffer(constant_buffer, &invViewProj,
-                                          sizeof(float) * 16);
+    glm::mat4 world = glm::mat4(1.0);
+    struct CameraConstBufferBlock const_buffer_block {
+      world, invViewProj
+    };
+    current_copy_commandlist->writeBuffer(constant_buffer, &const_buffer_block,
+                                          sizeof(const_buffer_block));
   }
 }
 

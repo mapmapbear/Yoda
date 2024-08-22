@@ -44,6 +44,5 @@ float4 main_ps(VertexOut pin) : SV_Target
 	panorama_coords /= float2(M_PI * 2.0, M_PI);
 
     float4 o_color = t_Texture.Sample(s_Sampler, panorama_coords);
-    o_color = pow(o_color, 1/2.2);
     return o_color;
 }

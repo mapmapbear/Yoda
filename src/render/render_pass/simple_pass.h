@@ -6,7 +6,10 @@
 namespace Yoda {
 class RHIContextD3D12;
 class FlyCamera;
-
+struct CameraConstBufferBlock {
+  glm::mat4 world;
+  glm::mat4 view_proj;
+};
 class SimplePass {
 public:
   SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd);
@@ -39,9 +42,17 @@ protected:
   nvrhi::FramebufferHandle preZ_framebuffer;
 
 protected:
-  nvrhi::TextureHandle albedo_texute;
+  nvrhi::TextureHandle albedo_texture;
   nvrhi::TextureDesc aldebo_desc;
   unsigned char *albedo_raw_data = nullptr;
+
+  nvrhi::TextureHandle normal_texture;
+  nvrhi::TextureDesc normal_desc;
+  unsigned char *normal_raw_data = nullptr;
+
+  nvrhi::TextureHandle RMO_texture;
+  nvrhi::TextureDesc RMO_desc;
+  unsigned char *RMO_raw_data = nullptr;
 
   nvrhi::TextureDesc irradiance_desc;
   nvrhi::TextureHandle irradiance_texture;

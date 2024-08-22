@@ -47,7 +47,7 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     nvrhi::TextureDesc texture_desc;
     texture_desc.width = m_render_context->get_swapchain_info().width;
     texture_desc.height = m_render_context->get_swapchain_info().height;
-    texture_desc.format = nvrhi::Format::RGBA8_UNORM;
+    texture_desc.format = nvrhi::Format::SRGBA8_UNORM;
     texture_desc.debugName = "Pass A Color Buffer";
     texture_desc.isRenderTarget = true;
     texture_desc.isUAV = false;
@@ -112,7 +112,7 @@ void SampleApp::resizeFrameBuffer(uint32_t width, uint32_t height) {
     nvrhi::TextureDesc texture_desc;
     texture_desc.width = m_render_context->get_swapchain_info().width;
     texture_desc.height = m_render_context->get_swapchain_info().height;
-    texture_desc.format = nvrhi::Format::RGBA8_UNORM;
+    texture_desc.format = nvrhi::Format::SRGBA8_UNORM;
     texture_desc.debugName = "Pass A Color Buffer";
     texture_desc.isRenderTarget = true;
     texture_desc.isUAV = false;
