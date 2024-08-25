@@ -193,7 +193,7 @@ bool parse_mesh1(ufbx_scene *scene, World &world) {
 bool parse_mesh2(ufbx_scene *scene, World &world) {
   std::vector<std::shared_ptr<Mesh>> &meshes = world.mesh_group;
   const aiScene *aiscene = aiImportFile(
-      "module/cube.fbx", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_FixInfacingNormals);
+      "module/sphere.fbx", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_FixInfacingNormals);
 
   if (!aiscene || !aiscene->HasMeshes()) {
     printf("Unable to load data/rubber_duck/scene.gltf\n");

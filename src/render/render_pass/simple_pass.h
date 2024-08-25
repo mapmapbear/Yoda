@@ -9,6 +9,8 @@ class FlyCamera;
 struct CameraConstBufferBlock {
   glm::mat4 world;
   glm::mat4 view_proj;
+  glm::vec4 cameraPos;
+  glm::vec4 lightDir;
 };
 class SimplePass {
 public:
