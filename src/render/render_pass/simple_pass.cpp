@@ -383,7 +383,7 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
     glm::mat4 invViewProj = camera.view_proj;
     glm::mat4 world = glm::mat4(1.0);
     glm::vec4 camera_pos = glm::vec4(glm::vec3(camera.eye -  camera.center), 1.0);
-    glm::vec4 lightDir = glm::vec4(0.25, 0.25, 0.0, 0.0);
+    glm::vec4 lightDir = glm::vec4(-0.6, 0.25, 0.25, 0.0);
     struct CameraConstBufferBlock const_buffer_block {
       world, invViewProj, camera_pos, lightDir
     };
