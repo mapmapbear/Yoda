@@ -177,7 +177,9 @@ void SampleApp::renderFrame() {
   m_render_context->present(0);
 }
 
-void SampleApp::UpdateRenderData() {}
+void SampleApp::UpdateRenderData() {
+  passA->updateMaterial(passC->roughness, passC->metallic);
+}
 
 void SampleApp::handleWindowSizeChange() {
   HWND window_handle = m_window->getApiHandle();

@@ -19,6 +19,7 @@ struct ConstantBufferBlock
 	float4x4 viewProj;
 	float4 cameraPos;
 	float4 LightDir;
+	float4 matVec;
 };
 ConstantBuffer<ConstantBufferBlock> g_camera : register(b0);
 
@@ -111,6 +112,7 @@ float Fr_Disney(float NoV, float NoL, float LoH, float linearRoughness, float ro
 float linearRoughnessToRoughness(float roughness)
 {
 	return roughness * roughness;
+	// return sqrt(roughness);
 }
 
 float3 BRDF(BRDFContext data, float3 albedo, float roughness, float metallic)
@@ -121,7 +123,6 @@ float3 BRDF(BRDFContext data, float3 albedo, float roughness, float metallic)
 	float NoL = data.NdotL; 
 	float LoH = data.LdotH;
 	float linearRoughness = linearRoughnessToRoughness(roughness);
-
 	float3 F0 = float3(0.04f, 0.04f, 0.04f);
 	F0 = lerp(F0, albedo, metallic);
 
@@ -131,7 +132,7 @@ float3 BRDF(BRDFContext data, float3 albedo, float roughness, float metallic)
 
 	float3 Fr = (D * V) * F;
 	float3 Fd = Fr_Disney(NoV, NoL, LoH, linearRoughness, roughness);
-	return Fd + Fr;
+	return (Fr) * NoL;
 }
 
 float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
@@ -170,7 +171,7 @@ float3 EnvironmentBRDF(float3 N, float3 V, float3 albedo, float roughness, float
 	float3 Is = specular * (F * brdf.x + brdf.y);
 	float3 Id = kD * irradiance * albedo;
 
-	return (Id + Is);
+	return float3(Id + Is);
 }
 //-----------------------------------------
 VertexOut main_vs(
@@ -182,7 +183,7 @@ VertexOut main_vs(
 	vout.PosW = mul(g_camera.worldMat, float4(vin.PosL, 1.0));
 	vout.uv = vin.uv;
 	vout.viewDir = g_camera.cameraPos.xyz - vin.PosL.xyz;
-	vout.normal = normalize(mul(g_camera.worldMat, float4(vin.normal, 1.0)).xyz);
+	vout.normal = mul(g_camera.worldMat, float4(vin.normal, 0.0)).xyz;
 	return vout;
 }
 
@@ -192,14 +193,14 @@ float4 main_ps(VertexOut pin) : SV_Target
 	BRDFContext context;
 	float3 L = normalize(g_camera.LightDir.xyz);
 	float3 V = normalize(pin.viewDir);
-	float3 N = pin.normal;
+	float3 N = normalize(pin.normal);
 	InitBRDF(L, V, N, context);
 	// o_color += t_Normal.Sample(s_MaterialSampler, pin.uv) * 0.02;
 	// o_color += t_RMO.Sample(s_MaterialSampler, pin.uv) * 0.02;
 	// o_color += t_irradiacneTextArray.Sample(s_MaterialSampler, float3(pin.uv, 0.0)) * 0.2;
 	// o_color += t_specularTextArray.Sample(s_MaterialSampler, float3(pin.uv, 0.0)) * 0.2;
-	float3 lighting = BRDF(context, o_color.xyz, 0.02, 0.2);
-	lighting = EnvironmentBRDF(N, V, o_color.xyz, 0.02, 0.2);
+	float3 lighting = BRDF(context, float3(0.5, 0.5, 0.5), g_camera.matVec.x, g_camera.matVec.y);
+	//lighting += EnvironmentBRDF(N, V, float3(0.5, 0.5, 0.5), g_camera.matVec.x, g_camera.matVec.y);
 	o_color.xyz = lighting;
     return o_color;
 }

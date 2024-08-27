@@ -12,6 +12,7 @@ struct CameraConstBufferBlock {
   glm::mat4 view_proj;
   glm::vec4 cameraPos;
   glm::vec4 lightDir;
+  glm::vec4 matVec;
 };
 class SimplePass {
 public:
@@ -75,5 +76,9 @@ protected:
   std::shared_ptr<RHIContextD3D12> render_contex;
   bool is_pre_frame = true;
   bool is_start_frame = true;
+public:
+  float roughness = 0.045;
+  float metallic = 0.2;
+  void updateMaterial(float inRoughness, float inMetallic);
 };
 } // namespace Yoda

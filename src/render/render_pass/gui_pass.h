@@ -71,5 +71,9 @@ protected:
   std::shared_ptr<RHIContextD3D12> m_context;
   ImFont *m_font = nullptr;
   World *scene_world;
+
+public:
+  float roughness = 0.045;
+  float metallic = 0.2;
 };
 } // namespace Yoda

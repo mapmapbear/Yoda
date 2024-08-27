@@ -32,8 +32,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
                                                    ps_byte_code.m_byte_code);
   int x, y, n;
   albedo_raw_data = stbi_load("textures/gray.png", &x, &y, &n, 4);
-  // albedo_raw_data = stbi_load("textures/lemon/lemon_diff_4k.tga", &x, &y, &n,
-  // 4);
+  //   albedo_raw_data =
+  //       stbi_load("textures/lemon/lemon_diff_4k.tga", &x, &y, &n, 4);
   int nx, ny, nz;
   normal_raw_data =
       stbi_load("textures/lemon/lemon_nor_dx_4k.tga", &nx, &ny, &nz, 4);
@@ -71,7 +71,7 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
 
   int bx, by, bz;
   brdfIntegration_raw_data =
-      stbi_load("textures/IBL/brdf.png", &bx, &by, &bz, 4);
+      stbi_load("textures/IBL/brdf.tga", &bx, &by, &bz, 4);
 
   nvrhi::VertexAttributeDesc attributes[] = {
       nvrhi::VertexAttributeDesc()
@@ -140,16 +140,16 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
                  .setDebugName("RMO Texture");
   RMO_texture = device->createTexture(RMO_desc);
 
-//   irradiance_desc = nvrhi::TextureDesc()
-//                         .setArraySize(6)
-//                         .setDimension(nvrhi::TextureDimension::Texture2DArray)
-//                         .setWidth(32)
-//                         .setHeight(32)
-//                         .setFormat(nvrhi::Format::RGBA8_UNORM)
-//                         .setInitialState(nvrhi::ResourceStates::ShaderResource)
-//                         .setKeepInitialState(true)
-//                         .setDebugName("irradianceMap");
-//   irradiance_texture = device->createTexture(irradiance_desc);
+  //   irradiance_desc = nvrhi::TextureDesc()
+  //                         .setArraySize(6)
+  //                         .setDimension(nvrhi::TextureDimension::Texture2DArray)
+  //                         .setWidth(32)
+  //                         .setHeight(32)
+  //                         .setFormat(nvrhi::Format::RGBA8_UNORM)
+  //                         .setInitialState(nvrhi::ResourceStates::ShaderResource)
+  //                         .setKeepInitialState(true)
+  //                         .setDebugName("irradianceMap");
+  //   irradiance_texture = device->createTexture(irradiance_desc);
 
   irradiance_desc = nvrhi::TextureDesc()
                         .setArraySize(6)
@@ -264,13 +264,13 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
 
   auto &textureSampler =
       nvrhi::SamplerDesc().setAllFilters(true).setAllAddressModes(
-          nvrhi::SamplerAddressMode::Repeat);
+          nvrhi::SamplerAddressMode::Clamp);
   auto &envTextureSampler =
       nvrhi::SamplerDesc().setAllFilters(true).setAllAddressModes(
           nvrhi::SamplerAddressMode::Wrap);
   nvrhi::SamplerHandle repeat_sampler = device->createSampler(textureSampler);
   nvrhi::SamplerHandle warp_sampler = device->createSampler(envTextureSampler);
- 
+
   auto bindingSetDesc =
       nvrhi::BindingSetDesc()
           .addItem(nvrhi::BindingSetItem::ConstantBuffer(0, constant_buffer))
@@ -280,7 +280,8 @@ SimplePass::SimplePass(std::shared_ptr<RHIContextD3D12> context, World *wolrd) {
           .addItem(nvrhi::BindingSetItem::Texture_SRV(2, RMO_texture))
           .addItem(nvrhi::BindingSetItem::Texture_SRV(3, irradiance_texture))
           .addItem(nvrhi::BindingSetItem::Texture_SRV(4, specular_texture))
-          .addItem(nvrhi::BindingSetItem::Texture_SRV(5, brdfIntegration_texture))
+          .addItem(
+              nvrhi::BindingSetItem::Texture_SRV(5, brdfIntegration_texture))
           .addItem(nvrhi::BindingSetItem::Sampler(0, repeat_sampler))
           .addItem(nvrhi::BindingSetItem::Sampler(1, warp_sampler));
 
@@ -304,6 +305,11 @@ SimplePass::~SimplePass() {
   binding_set = nullptr;
   preZ_framebuffer = nullptr;
   framebuffer = nullptr;
+}
+
+void SimplePass::updateMaterial(float inRoughness, float inMetallic) {
+  roughness = inRoughness;
+  metallic = inMetallic;
 }
 
 void SimplePass::UpdateRenderdata(FlyCamera camera) {
@@ -414,9 +420,10 @@ void SimplePass::UpdateRenderdata(FlyCamera camera) {
     glm::mat4 world = glm::mat4(1.0);
     glm::vec4 camera_pos =
         glm::vec4(glm::vec3(camera.eye - camera.center), 1.0);
-    glm::vec4 lightDir = glm::vec4(-0.6, 0.25, 0.25, 0.0);
+    glm::vec4 lightDir = glm::vec4(0.0, 0.25, 0.25, 0.0);
+    glm::vec4 matVec = glm::vec4(max(roughness, 0.0045), metallic, 0.0, 0.0);
     struct CameraConstBufferBlock const_buffer_block {
-      world, invViewProj, camera_pos, lightDir
+      world, invViewProj, camera_pos, lightDir, matVec
     };
     current_copy_commandlist->writeBuffer(constant_buffer, &const_buffer_block,
                                           sizeof(const_buffer_block));

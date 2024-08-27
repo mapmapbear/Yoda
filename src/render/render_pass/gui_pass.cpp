@@ -206,6 +206,11 @@ void GUIPass::build_UI() {
   ImGui::EndChild();
 
   ImGui::End();
+
+  ImGui::Begin("Material Panel");
+  ImGui::SliderFloat("##1", &roughness, 0.0f, 1.0f, "Roughness = %.3f");
+  ImGui::SliderFloat("##2", &metallic, 0.0f, 1.0f, "Metallic = %.3f");
+  ImGui::End();
 };
 
 void GUIPass::Render(nvrhi::TextureHandle color_tex,
