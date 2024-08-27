@@ -10,7 +10,8 @@ struct VertexOut
     float4 PosH : SV_POSITION;
 	float4 PosW : POSITION;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD;
+    float2 uv : TEXCOORD0;
+	float3 viewDir : TEXCOORD1;
 };
 struct ConstantBufferBlock
 {
@@ -36,9 +37,11 @@ static const float3 g_colors[] = {
 Texture2D t_Texture : register(t0);
 Texture2D t_Normal : register(t1);
 Texture2D t_RMO : register(t2);
-Texture2DArray t_irradiacneTextArray : register(t3);
-Texture2DArray t_specularTextArray : register(t4);
+TextureCube t_irradiacneTextArray : register(t3);
+TextureCube t_specularTextArray : register(t4);
+Texture2D t_brdfIntegrationMap : register(t5);
 SamplerState s_MaterialSampler : register(s0);
+SamplerState s_EnvSampler : register(s1);
 
 
 
@@ -128,7 +131,46 @@ float3 BRDF(BRDFContext data, float3 albedo, float roughness, float metallic)
 
 	float3 Fr = (D * V) * F;
 	float3 Fd = Fr_Disney(NoV, NoL, LoH, linearRoughness, roughness);
-	return Fd;
+	return Fd + Fr;
+}
+
+float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
+{
+	float3 ret = float3(0.0, 0.0, 0.0);
+	float powTheta = pow(1.0 - cosTheta, 5.0);
+	float invRough = float(1.0 - roughness);
+
+	ret.x = F0.x + (max(invRough, F0.x) - F0.x) * powTheta;
+	ret.y = F0.y + (max(invRough, F0.y) - F0.y) * powTheta;
+	ret.z = F0.z + (max(invRough, F0.z) - F0.z) * powTheta;
+
+	return ret;
+}
+
+
+float3 EnvironmentBRDF(float3 N, float3 V, float3 albedo, float roughness, float metalness)
+{
+	const float3 R = reflect(-V, N);
+
+	// F0 represents the base reflectivity (calculated using IOR: index of refraction)
+	float3 F0 = float3(0.04f, 0.04f, 0.04f);
+	F0 = lerp(F0, albedo, metalness);
+
+	float3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
+
+	float3 kS = F;
+	float3 kD = (float3(1.0f, 1.0f, 1.0f) - kS) * (1.0f - metalness);
+	float3 irradiance = t_irradiacneTextArray.Sample(s_EnvSampler, N).rgb;
+	float3 specular = t_specularTextArray.SampleLevel(s_EnvSampler, R, 0.0).rgb;
+
+	float2 maxNVRough = float2(max(dot(N, V), 0.0), roughness);	
+	float2 brdf = t_brdfIntegrationMap.Sample(s_MaterialSampler, maxNVRough).rg;
+
+	// Id & Is: diffuse & specular illumination
+	float3 Is = specular * (F * brdf.x + brdf.y);
+	float3 Id = kD * irradiance * albedo;
+
+	return (Id + Is);
 }
 //-----------------------------------------
 VertexOut main_vs(
@@ -139,26 +181,25 @@ VertexOut main_vs(
 	vout.PosH = mul(g_camera.viewProj, float4(vin.PosL, 1.0));
 	vout.PosW = mul(g_camera.worldMat, float4(vin.PosL, 1.0));
 	vout.uv = vin.uv;
-	vout.normal = mul(g_camera.worldMat, float4(vin.normal, 1.0)).xyz;
+	vout.viewDir = g_camera.cameraPos.xyz - vin.PosL.xyz;
+	vout.normal = normalize(mul(g_camera.worldMat, float4(vin.normal, 1.0)).xyz);
 	return vout;
 }
-
-
 
 float4 main_ps(VertexOut pin) : SV_Target
 {
     float4 o_color = t_Texture.Sample(s_MaterialSampler, pin.uv);
 	BRDFContext context;
 	float3 L = normalize(g_camera.LightDir.xyz);
-	float3 V = normalize(g_camera.cameraPos.xyz - pin.PosW.xyz);
-	float3 N = normalize(pin.normal);
+	float3 V = normalize(pin.viewDir);
+	float3 N = pin.normal;
 	InitBRDF(L, V, N, context);
 	// o_color += t_Normal.Sample(s_MaterialSampler, pin.uv) * 0.02;
 	// o_color += t_RMO.Sample(s_MaterialSampler, pin.uv) * 0.02;
 	// o_color += t_irradiacneTextArray.Sample(s_MaterialSampler, float3(pin.uv, 0.0)) * 0.2;
 	// o_color += t_specularTextArray.Sample(s_MaterialSampler, float3(pin.uv, 0.0)) * 0.2;
 	float3 lighting = BRDF(context, o_color.xyz, 0.02, 0.2);
-	// o_color.xyz = pow(o_color.xyz, 1.0 / 2.2);
+	lighting = EnvironmentBRDF(N, V, o_color.xyz, 0.02, 0.2);
 	o_color.xyz = lighting;
     return o_color;
 }

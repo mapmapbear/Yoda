@@ -2,6 +2,7 @@
 #include "render/world.h"
 #include <memory>
 #include <nvrhi/nvrhi.h>
+#include <vector>
 
 namespace Yoda {
 class RHIContextD3D12;
@@ -63,6 +64,10 @@ protected:
   nvrhi::TextureDesc specular_desc;
   nvrhi::TextureHandle specular_texture;
   std::vector<unsigned char *> specular_raw_data;
+
+  nvrhi::TextureHandle brdfIntegration_texture;
+  nvrhi::TextureDesc brdfIntegration_desc;
+  unsigned char *brdfIntegration_raw_data = nullptr;
 
 protected:
   World *scene_world;
