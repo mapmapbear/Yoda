@@ -27,7 +27,7 @@ bool parse_mesh2(ufbx_scene *scene, World &world) {
       "module/sphere.fbx", aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_FixInfacingNormals);
 
   if (!aiscene || !aiscene->HasMeshes()) {
-    printf("Unable to load data/rubber_duck/scene.gltf\n");
+    LOG_ERROR("Unable to load data FBX !!!");
     exit(255);
   }
   for (uint32_t i = 0; i < aiscene->mNumMeshes; ++i) {
@@ -181,7 +181,7 @@ bool World::load_scene1(std::string &path, World &world) {
   ufbx_error error; // Optional, pass NULL if you don't care about errors
   ufbx_scene *scene = ufbx_load_file(path.c_str(), &opts, &error);
   if (!scene) {
-    fprintf(stderr, "Failed to load: %s\n", error.description.data);
+    LOG_ERROR("Failed to load: {}", error.description.data);
     exit(1);
   }
   for (int node_i = 0; node_i < static_cast<int>(scene->nodes.count);

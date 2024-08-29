@@ -6,6 +6,7 @@
 #include "render/render_pass/gui_pass.h"
 #include "render/render_pass/simple_pass.h"
 #include "render/render_pass/sky_pass.h"
+#include "render/render_pass/present_pass.h"
 #include "render/world.h"
 #include "rhi/d3d12/rhi_context_d3d12.h"
 
@@ -35,10 +36,10 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     m_render_context->initialize(m_window->getApiHandle());
 
     std::string test_scene_path = "module/sphere.fbx";
-    //std::string test_scene_path1 = "module/bistro/BistroExterior.fbx";
+    // std::string test_scene_path1 = "module/bistro/BistroExterior.fbx";
     bool state = World::load_scene2(test_scene_path, scene_world);
     state = World::load_scene1(test_scene_path, scene_world);
-    //state = World::load_scene2(test_scene_path1, scene_world1);
+    // state = World::load_scene2(test_scene_path1, scene_world1);
 
     fcamera =
         FlyCamera{glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f),
@@ -47,7 +48,7 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     nvrhi::TextureDesc texture_desc;
     texture_desc.width = m_render_context->get_swapchain_info().width;
     texture_desc.height = m_render_context->get_swapchain_info().height;
-    texture_desc.format = nvrhi::Format::SRGBA8_UNORM;
+    texture_desc.format = nvrhi::Format::RGBA8_UNORM;
     texture_desc.debugName = "Pass A Color Buffer";
     texture_desc.isRenderTarget = true;
     texture_desc.isUAV = false;
@@ -65,6 +66,7 @@ SampleApp::SampleApp(const SampleAppConfig &config) {
     passA = std::make_shared<SimplePass>(m_render_context, &scene_world);
     passB = std::make_shared<SkyPass>(m_render_context);
     passC = std::make_shared<GUIPass>(m_render_context, &scene_world);
+    presentPass = std::make_shared<PresentPass>(m_render_context);
     passC->init();
   }
 }
@@ -112,7 +114,7 @@ void SampleApp::resizeFrameBuffer(uint32_t width, uint32_t height) {
     nvrhi::TextureDesc texture_desc;
     texture_desc.width = m_render_context->get_swapchain_info().width;
     texture_desc.height = m_render_context->get_swapchain_info().height;
-    texture_desc.format = nvrhi::Format::SRGBA8_UNORM;
+    texture_desc.format = nvrhi::Format::RGBA8_UNORM;
     texture_desc.debugName = "Pass A Color Buffer";
     texture_desc.isRenderTarget = true;
     texture_desc.isUAV = false;
@@ -134,6 +136,7 @@ void SampleApp::resizeFrameBuffer(uint32_t width, uint32_t height) {
     test_framebuffer = devicePtr->createFramebuffer(framebufferDesc);
     passA->Resize(color_buffer, depth_buffer);
     passB->Resize(color_buffer, depth_buffer);
+    presentPass->Resize(test_framebuffer);
   } else {
     // TODO
   }
@@ -162,6 +165,10 @@ void SampleApp::renderFrame() {
   passB->Render(color_buffer, depth_buffer);
   passC->Render(color_buffer, depth_buffer);
 
+  presentPass->setMainColorTex(color_buffer);
+  m_render_context->get_current_frame_buffer();
+  presentPass->Render(m_render_context->get_current_frame_buffer());
+
   nvrhi::TextureSlice dst_slice = nvrhi::TextureSlice();
   dst_slice.width = m_render_context->get_swapchain_info().width;
   dst_slice.height = m_render_context->get_swapchain_info().height;
@@ -169,9 +176,9 @@ void SampleApp::renderFrame() {
   src_slice.width = m_render_context->get_swapchain_info().width;
   src_slice.height = m_render_context->get_swapchain_info().height;
 
-  current_command_list_graphics->copyTexture(
-      m_render_context->get_swapchain_back_buffer(), dst_slice, color_buffer,
-      src_slice);
+  // current_command_list_graphics->copyTexture(
+  //     m_render_context->get_swapchain_back_buffer(), dst_slice, color_buffer,
+  //     src_slice);
   current_command_list_graphics->close();
   m_render_context->excute_command_list(current_command_list_graphics);
   m_render_context->present(0);

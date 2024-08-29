@@ -90,7 +90,7 @@ size_t RHIContextD3D12::initialize(HWND handle) {
   nvrhi_device = nvrhi::validation::createValidationLayer(nvrhi_device);
 #endif
   swapchain = swapchain_create(handle);
-  create_render_targets();
+  // create_render_targets();
   frame_fence = fence_create();
   for (size_t i = 0; i < MAX_FRAMES_COUNT; ++i) {
     frame_fence_events.emplace_back(CreateEvent(nullptr, false, true, nullptr));

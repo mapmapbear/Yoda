@@ -38,6 +38,7 @@ struct SampleAppConfig {
 class SimplePass;
 class SkyPass;
 class GUIPass;
+class PresentPass;
 class SampleApp : public Window::ICallbacks {
 public:
   SampleApp(const SampleAppConfig &config);
@@ -59,6 +60,7 @@ public:
   std::shared_ptr<SimplePass> passA;
   std::shared_ptr<SkyPass> passB;
   std::shared_ptr<GUIPass> passC;
+  std::shared_ptr<PresentPass> presentPass;
 
 protected:
   // base pass
